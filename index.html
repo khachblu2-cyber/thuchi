@@ -88,7 +88,7 @@
   <div class="wrap">
     <div class="title">📒 Sổ Thu Chi Tổng — 4 Công Ty</div>
     <div class="save-status" id="cloudStatus" style="color:#93A5C4;"></div>
-    <div class="save-status" style="color:#7C93B8;opacity:.75;">Phiên bản: V3.4.5</div>
+    <div class="save-status" style="color:#7C93B8;opacity:.75;">Phiên bản: V3.4.9</div>
   </div>
 </div>
 
@@ -370,9 +370,10 @@
   <div id="ddlPayOutSection" class="hidden">
     <div class="card" style="overflow-x:auto;">
       <div class="card-title">Nhập khoản chi</div>
+      <div class="field" style="max-width:200px;margin-bottom:12px;"><label>Ngày</label><input type="date" id="splitPayDate"></div>
       <div class="muted" style="font-size:11.5px;margin-bottom:8px;">Gõ vào ô "Mục đích chi tiền" — gợi ý lấy từ danh mục "💸 Chi phí" (mục Khách hàng/Đại lý), gõ chữ khác cũng được.</div>
       <table class="grid" id="splitPayTable">
-        <thead><tr><th style="width:34px;">STT</th><th style="min-width:200px;">Mục đích chi tiền</th><th style="width:170px;">Số tiền</th><th style="width:150px;">Ghi chú</th><th style="width:30px;"></th></tr></thead>
+        <thead><tr><th style="width:34px;">STT</th><th style="width:200px;">Mục đích chi tiền</th><th style="width:210px;">Số tiền</th><th style="width:150px;">Ghi chú</th><th style="width:30px;"></th></tr></thead>
         <tbody id="splitPayTbody"></tbody>
       </table>
       <button class="btn btn-outline btn-sm" style="margin-top:8px;" onclick="addSplitPayRow()">➕ Thêm dòng</button>
@@ -2609,6 +2610,8 @@ function exportCanDoiExcel(){
 function emptySplitPayRow(){ return { id: uid(), purpose:'', amount:'', note:'' }; }
 function initSplitPayRows(){
   splitPayRows = Array.from({length:5}, emptySplitPayRow);
+  const dateEl = document.getElementById('splitPayDate');
+  if(dateEl) dateEl.value = todayKey();
 }
 function resetSplitPayForm(){
   initSplitPayRows();
@@ -2629,8 +2632,8 @@ function renderSplitPayTable(){
   tbody.innerHTML = splitPayRows.map((r,i)=>`
     <tr>
       <td class="readonly">${i+1}</td>
-      <td><input type="text" data-src="feeType" class="split-field" data-field="purpose" data-id="${r.id}" value="${escapeHtml(r.purpose)}" placeholder="Gõ để tìm mục đích…"></td>
-      <td><input type="text" class="split-field split-num" data-field="amount" data-id="${r.id}" value="${escapeHtml(formatDisplayNumber(r.amount))}" inputmode="decimal"></td>
+      <td><input type="text" data-src="feeType" class="split-field" data-field="purpose" data-id="${r.id}" value="${escapeHtml(r.purpose)}" placeholder="Gõ tìm…" style="font-size:13px;"></td>
+      <td><input type="text" class="split-field split-num" data-field="amount" data-id="${r.id}" value="${escapeHtml(formatDisplayNumber(r.amount))}" inputmode="decimal" style="font-size:15px;font-weight:600;"></td>
       <td><input type="text" class="txt-left split-field" data-field="note" data-id="${r.id}" value="${escapeHtml(r.note)}"></td>
       <td><button class="del-row-btn" onclick="removeSplitPayRow('${r.id}')">🗑</button></td>
     </tr>
@@ -2651,11 +2654,12 @@ function renderSplitPayTable(){
 }
 function buildSplitPayBatchReceiptHtml(items){
   const total = items.reduce((s,x)=>s+x.amount,0);
+  const dateLabel = items[0] ? formatDateVN(items[0].date) : formatDateVN(todayKey());
   const rows = items.map((x,i)=>`<tr><td style="padding:5px 7px;border:1px solid #999;">${i+1}</td><td style="padding:5px 7px;border:1px solid #999;text-align:left;">${escapeHtml(x.purpose)}</td><td style="padding:5px 7px;border:1px solid #999;text-align:right;">${formatNumber(x.amount)}</td><td style="padding:5px 7px;border:1px solid #999;text-align:left;">${escapeHtml(x.note||'')}</td></tr>`).join('');
   return `
     <div style="font-family:Inter,sans-serif;color:#111;">
-      <h2 style="text-align:center;margin:0 0 2px;">Ngày ${formatDateVN(todayKey())}</h2>
-      <div style="text-align:center;font-weight:700;margin-bottom:12px;">PHIẾU CHI</div>
+      <h2 style="text-align:center;margin:0 0 2px;">PHIẾU CHI</h2>
+      <div style="text-align:center;font-size:12.5px;color:#555;margin-bottom:12px;">Ngày: ${dateLabel}</div>
       <table style="width:100%;border-collapse:collapse;font-size:12.5px;">
         <thead><tr>
           <th style="padding:5px 7px;border:1px solid #999;background:#EAF1FB;">STT</th>
@@ -2669,18 +2673,28 @@ function buildSplitPayBatchReceiptHtml(items){
       </table>
     </div>`;
 }
+// Nếu Mục đích gõ vào chưa có trong danh mục Chi phí -> tự tạo mã mới bên đó (không cần vào tab Khách hàng/Đại lý tạo tay)
+function ensureFeeType(name){
+  const trimmed = (name||'').trim();
+  if(!trimmed) return;
+  const exists = feeTypes.some(f=> normalizeVN(f.name)===normalizeVN(trimmed));
+  if(!exists) feeTypes.push({ id: uid(), code: nextFeeTypeCode(), name: trimmed });
+}
 function saveSplitPayRows(){
   const valid = splitPayRows.filter(r=> r.purpose && Number(rawNumberString(r.amount))>0);
   if(valid.length===0){ alert("Chưa có dòng nào đủ thông tin (cần chọn Mục đích và nhập Số tiền)"); return; }
   const batchId = uid();
   const now = Date.now();
-  const savedItems = valid.map(r=> ({ id: uid(), batchId, purpose: r.purpose, amount: Number(rawNumberString(r.amount)), note: r.note, createdAt: now }));
+  const batchDate = document.getElementById('splitPayDate')?.value || todayKey();
+  valid.forEach(r=> ensureFeeType(r.purpose));
+  const savedItems = valid.map(r=> ({ id: uid(), batchId, date: batchDate, purpose: r.purpose, amount: Number(rawNumberString(r.amount)), note: r.note, createdAt: now }));
   savedItems.forEach(item=> splitPayments.push(item));
   saveAll();
   initSplitPayRows();
   renderSplitPayTable();
   renderSplitPayList();
-  shareHtmlAsImage(buildSplitPayBatchReceiptHtml(savedItems), `chi-tien-${todayKey()}.png`, 'Phiếu chi');
+  updateAllSuggestions();
+  shareHtmlAsImage(buildSplitPayBatchReceiptHtml(savedItems), `chi-tien-${batchDate}.png`, 'Phiếu chi');
 }
 let editingSplitPayId = null;
 function editSplitPay(id){ editingSplitPayId = id; renderSplitPayList(); }
@@ -2688,14 +2702,17 @@ function cancelEditSplitPay(){ editingSplitPayId = null; renderSplitPayList(); }
 function saveEditSplitPay(id){
   const x = splitPayments.find(s=>s.id===id);
   if(!x) return;
+  const date = document.getElementById('editSplitDate-'+id).value;
   const purpose = document.getElementById('editSplitPurpose-'+id).value;
   const amount = Number(rawNumberString(document.getElementById('editSplitAmount-'+id).value))||0;
   const note = document.getElementById('editSplitNote-'+id).value;
   if(!purpose || amount<=0){ alert("Cần chọn Mục đích và nhập Số tiền hợp lệ"); return; }
-  x.purpose = purpose; x.amount = amount; x.note = note;
+  ensureFeeType(purpose);
+  x.date = date || x.date; x.purpose = purpose; x.amount = amount; x.note = note;
   editingSplitPayId = null;
   saveAll();
   renderSplitPayList();
+  updateAllSuggestions();
 }
 function deleteSplitPay(id, btn){
   if(!requestConfirm('splitpay:'+id, btn)) return;
@@ -2711,13 +2728,18 @@ function renderSplitPayList(){
   const list = [...splitPayments].sort((a,b)=> (b.createdAt||0)-(a.createdAt||0));
   const total = list.reduce((s,x)=>s+x.amount,0);
   if(totalsBox) totalsBox.textContent = `💰 Tổng tiền: ${formatNumber(total)} đ   |   ${list.length} khoản chi`;
+  // Tính tổng tiền theo từng đợt lưu (batch) để hiện kèm trong cột Ghi chú
+  const batchTotal = {}, batchCount = {};
+  list.forEach(x=>{ if(x.batchId){ batchTotal[x.batchId]=(batchTotal[x.batchId]||0)+x.amount; batchCount[x.batchId]=(batchCount[x.batchId]||0)+1; } });
+  const shownBatch = new Set();
   const body = list.map((x,i)=>{
     if(editingSplitPayId===x.id){
       return `
         <tr>
           <td class="readonly">${i+1}</td>
-          <td colspan="3" style="padding:8px;">
+          <td colspan="4" style="padding:8px;">
             <div class="row-flex">
+              <div class="field"><label>Ngày</label><input type="date" id="editSplitDate-${x.id}" value="${x.date||todayKey()}"></div>
               <div class="field"><label>Mục đích</label><input type="text" data-src="feeType" id="editSplitPurpose-${x.id}" value="${escapeHtml(x.purpose)}" placeholder="Gõ để tìm…"></div>
               <div class="field"><label>Số tiền</label><input type="text" id="editSplitAmount-${x.id}" value="${escapeHtml(formatDisplayNumber(x.amount))}" inputmode="decimal" oninput="formatNumberFieldLive(event)"></div>
               <div class="field"><label>Ghi chú</label><input type="text" id="editSplitNote-${x.id}" value="${escapeHtml(x.note||'')}"></div>
@@ -2729,12 +2751,17 @@ function renderSplitPayList(){
           </td>
         </tr>`;
     }
+    let noteHtml = escapeHtml(x.note||'');
+    if(x.batchId && batchCount[x.batchId]>1 && !shownBatch.has(x.batchId)){
+      shownBatch.add(x.batchId);
+      noteHtml += `<div style="font-size:10.5px;color:var(--blue);font-weight:700;margin-top:2px;">Tổng đợt (${batchCount[x.batchId]} mã): ${formatNumber(batchTotal[x.batchId])} đ</div>`;
+    }
     return `
       <tr>
         <td class="readonly">${i+1}</td>
         <td style="text-align:left;padding:6px 8px;">${escapeHtml(x.purpose)}</td>
         <td class="readonly">${formatNumber(x.amount)}</td>
-        <td style="text-align:left;padding:6px 8px;">${escapeHtml(x.note||'')}</td>
+        <td style="text-align:left;padding:6px 8px;">${noteHtml}</td>
         <td style="white-space:nowrap;">
           <button class="del-row-btn" title="Xem" onclick="viewSplitPayImage('${x.id}')">👁</button>
           <button class="del-row-btn" title="Sửa" onclick="editSplitPay('${x.id}')">✏️</button>
@@ -2744,7 +2771,7 @@ function renderSplitPayList(){
   }).join('');
   wrap.innerHTML = `
     <table class="grid">
-      <thead><tr><th style="width:40px;">STT</th><th>MỤC ĐÍCH CHI TIỀN</th><th style="width:150px;">SỐ TIỀN</th><th style="width:150px;">GHI CHÚ</th><th style="width:110px;"></th></tr></thead>
+      <thead><tr><th style="width:40px;">STT</th><th>MỤC ĐÍCH CHI TIỀN</th><th style="width:150px;">SỐ TIỀN</th><th style="width:170px;">GHI CHÚ</th><th style="width:110px;"></th></tr></thead>
       <tbody>${body}
         <tr class="sum-row"><td colspan="2">TỔNG</td><td>${formatNumber(total)}</td><td colspan="2"></td></tr>
       </tbody>
