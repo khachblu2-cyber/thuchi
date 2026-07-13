@@ -102,7 +102,7 @@
     <div class="card-title">Thông tin phiếu</div>
     <div class="row-flex">
       <div class="field"><label>Ngày</label><input type="date" id="sheetDate"></div>
-      <div class="field" style="flex:2;min-width:220px;"><label>Tên khách hàng</label><select id="sheetTitle" onchange="autoFillTienCuForCustomer()"></select></div>
+      <div class="field" style="flex:2;min-width:220px;"><label>Tên khách hàng</label><input type="text" list="custSuggest" id="sheetTitle" placeholder="Gõ để tìm khách hàng…" onchange="autoFillTienCuForCustomer()"></div>
     </div>
   </div>
 
@@ -269,7 +269,7 @@
     </div>
     <div class="card" id="debtkhCustomerCard">
       <div class="card-title">Chọn khách hàng</div>
-      <select id="debtkhCustomer" onchange="renderDebtKhTable()"></select>
+      <input type="text" list="custSuggest" id="debtkhCustomer" oninput="renderDebtKhTable()" onchange="renderDebtKhTable()" placeholder="Gõ để tìm khách hàng…">
     </div>
     <div class="card" id="debtkhFilterCard">
       <div class="card-title">Lọc theo ngày</div>
@@ -319,8 +319,8 @@
   <div id="ddlListSection" class="hidden">
     <div class="card sticky-below-tabs-2">
       <div class="row-flex">
-        <div class="field"><label>Lọc theo Đại lý</label><select id="ddlFilterDealer" onchange="renderDdlList()"></select></div>
-        <div class="field"><label>Lọc theo Khách hàng</label><select id="ddlFilterCustomer" onchange="renderDdlList()"></select></div>
+        <div class="field"><label>Lọc theo Đại lý</label><input type="text" list="dealerSuggest" id="ddlFilterDealer" oninput="renderDdlList()" onchange="renderDdlList()" placeholder="Tất cả đại lý"></div>
+        <div class="field"><label>Lọc theo Khách hàng</label><input type="text" list="custSuggest" id="ddlFilterCustomer" oninput="renderDdlList()" onchange="renderDdlList()" placeholder="Tất cả khách hàng"></div>
       </div>
       <div class="row-flex" style="margin-top:12px;">
         <div class="field"><label>Từ ngày</label><input type="date" id="ddlListFrom" onchange="renderDdlList()"></div>
@@ -341,8 +341,8 @@
     <div class="card sticky-below-tabs-2">
       <div class="card-title">Chọn khách hàng / đại lý để xem các khoản</div>
       <div class="row-flex">
-        <div class="field"><label>Khách hàng</label><select id="ddlPayCustomer" onchange="renderDdlPayList()"></select></div>
-        <div class="field"><label>Đại lý (không bắt buộc)</label><select id="ddlPayDealer" onchange="renderDdlPayList()"><option value="">-- Tất cả đại lý --</option></select></div>
+        <div class="field"><label>Khách hàng</label><input type="text" list="custSuggest" id="ddlPayCustomer" oninput="renderDdlPayList()" onchange="renderDdlPayList()" placeholder="Tất cả khách hàng"></div>
+        <div class="field"><label>Đại lý (không bắt buộc)</label><input type="text" list="dealerSuggest" id="ddlPayDealer" oninput="renderDdlPayList()" onchange="renderDdlPayList()" placeholder="Tất cả đại lý"></div>
       </div>
       <div class="section-tab" style="margin-top:12px;">
         <button class="active" id="ddlPayViewUnpaidBtn" onclick="setDdlPayView('unpaid')">🔴 Chưa chi</button>
@@ -364,7 +364,7 @@
     <div class="card" style="overflow-x:auto;">
       <div class="card-title">Nhập khoản chi</div>
       <table class="grid" id="splitPayTable">
-        <thead><tr><th style="width:34px;">STT</th><th style="min-width:200px;">Mục đích chi tiền</th><th style="width:150px;">Số tiền</th><th>Ghi chú</th><th style="width:30px;"></th></tr></thead>
+        <thead><tr><th style="width:34px;">STT</th><th style="width:88px;">Ngày</th><th style="min-width:200px;">Mục đích chi tiền</th><th style="width:140px;">Số tiền</th><th>Ghi chú</th><th style="width:30px;"></th></tr></thead>
         <tbody id="splitPayTbody"></tbody>
       </table>
       <button class="btn btn-outline btn-sm" style="margin-top:8px;" onclick="addSplitPayRow()">➕ Thêm dòng</button>
@@ -386,7 +386,7 @@
   <div id="ddlLedgerSection" class="hidden">
     <div class="card">
       <div class="card-title">Chọn đại lý</div>
-      <select id="ddlLedgerDealer" onchange="onDdlLedgerDealerChange()"></select>
+      <input type="text" list="dealerSuggest" id="ddlLedgerDealer" onchange="onDdlLedgerDealerChange()" placeholder="Gõ để tìm đại lý…">
       <div class="row-flex" style="margin-top:12px;">
         <div class="field"><label>Số dư đầu kỳ (nếu có, chuyển từ sổ cũ)</label><input type="text" id="ddlLedgerOpening" value="0" inputmode="decimal" oninput="formatNumberFieldLive(event)" onchange="saveDdlOpeningBalance()"></div>
       </div>
@@ -420,6 +420,7 @@
 <datalist id="dealerSuggest"></datalist>
 <datalist id="custSuggest"></datalist>
 <datalist id="feeTypeSuggest"></datalist>
+<datalist id="splitNoteSuggest"></datalist>
 
 <div id="printArea" style="display:none;"></div>
 
@@ -801,7 +802,7 @@ function renderDealerTable(){
   tbody.innerHTML = dealerRows.map((r,i)=>`
     <tr data-row-id="${r.id}">
       <td class="readonly">${i+1}</td>
-      <td><select class="dealer-field" data-field="dealer" data-id="${r.id}" style="font-size:14px;">${buildSelectOptions(dealers, r.dealer, '-- Chọn --', true)}</select></td>
+      <td><input type="text" list="dealerSuggest" class="dealer-field" data-field="dealer" data-id="${r.id}" style="font-size:14px;" value="${escapeHtml(r.dealer)}" placeholder="Gõ để tìm…"></td>
       <td><input type="text" class="txt-left dealer-field" data-field="soCon" data-id="${r.id}" value="${escapeHtml(r.soCon)}"></td>
       <td><input type="text" class="dealer-field dealer-num" data-field="kg" data-id="${r.id}" value="${escapeHtml(formatDisplayNumber(r.kg))}" inputmode="decimal" style="font-size:15px;font-weight:600;"></td>
       <td><input type="text" class="dealer-field dealer-num" data-field="giaTien" data-id="${r.id}" value="${escapeHtml(formatDisplayNumber(r.giaTien))}" inputmode="decimal" style="font-size:15px;font-weight:600;"></td>
@@ -878,11 +879,20 @@ function buildSelectOptions(list, currentValue, placeholder, hideCode){
   }
   return html;
 }
+function populateSuggestLists(){
+  const dl = document.getElementById('dealerSuggest');
+  if(dl) dl.innerHTML = dealers.map(d=>`<option value="${escapeHtml(d.name)}">${escapeHtml(d.code)} - ${escapeHtml(d.name)}</option>`).join('');
+  const cl = document.getElementById('custSuggest');
+  if(cl) cl.innerHTML = customers.map(c=>`<option value="${escapeHtml(c.name)}">${escapeHtml(c.code)} - ${escapeHtml(c.name)}</option>`).join('');
+  const fl = document.getElementById('feeTypeSuggest');
+  if(fl) fl.innerHTML = feeTypes.map(f=>`<option value="${escapeHtml(f.name)}">${escapeHtml(f.code)} - ${escapeHtml(f.name)}</option>`).join('');
+}
 function populateSheetTitleSelect(currentValue){
   const el = document.getElementById('sheetTitle');
-  if(el) el.innerHTML = buildSelectOptions(customers, currentValue||'', '-- Chọn khách hàng --');
+  if(el && el.value!==currentValue) el.value = currentValue||'';
 }
 function updateAllSuggestions(){
+  populateSuggestLists();
   populateSheetTitleSelect(document.getElementById('sheetTitle') ? document.getElementById('sheetTitle').value : '');
   if(document.getElementById('dealerTbody')) renderDealerTable();
   if(document.getElementById('feeTbody')) renderFeeTable();
@@ -897,7 +907,7 @@ function renderFeeTable(){
   const tbody = document.getElementById('feeTbody');
   tbody.innerHTML = feeRows.map(r=>`
     <tr>
-      <td><select class="fee-field" data-field="name" data-id="${r.id}">${buildSelectOptions(feeTypes, r.name, '-- Chọn phí --')}</select></td>
+      <td><input type="text" list="feeTypeSuggest" class="fee-field" data-field="name" data-id="${r.id}" value="${escapeHtml(r.name)}" placeholder="Gõ để tìm phí…"></td>
       <td><input type="text" class="fee-field fee-num" data-field="amount" data-id="${r.id}" value="${escapeHtml(formatDisplayNumber(r.amount))}" inputmode="decimal"></td>
       <td><button class="del-row-btn" onclick="removeFeeRow('${r.id}')">🗑</button></td>
     </tr>
@@ -926,7 +936,7 @@ function renderDeductTable(){
   const tbody = document.getElementById('deductTbody');
   tbody.innerHTML = deductRows.map(r=>`
     <tr>
-      <td><select class="deduct-field" data-field="name" data-id="${r.id}">${buildSelectOptions(feeTypes, r.name, '-- Chọn --')}</select></td>
+      <td><input type="text" list="feeTypeSuggest" class="deduct-field" data-field="name" data-id="${r.id}" value="${escapeHtml(r.name)}" placeholder="Gõ để tìm…"></td>
       <td><input type="text" class="deduct-field deduct-num" data-field="amount" data-id="${r.id}" value="${escapeHtml(formatDisplayNumber(r.amount))}" inputmode="decimal"></td>
       <td><button class="del-row-btn" onclick="removeDeductRow('${r.id}')">🗑</button></td>
     </tr>
@@ -960,11 +970,7 @@ function computeSheetConLai(s){
 function populateDebtKhCustomerSelect(){
   const el = document.getElementById('debtkhCustomer');
   if(!el) return;
-  const current = el.value;
-  el.innerHTML = customers.length
-    ? customers.map(c=>`<option value="${escapeHtml(c.name)}">${escapeHtml(c.code)} - ${escapeHtml(c.name)}</option>`).join('')
-    : `<option value="">-- Chưa có khách hàng --</option>`;
-  if(current) el.value = current;
+  if(!el.value && customers.length) el.value = customers[0].name;
 }
 let debtkhMode = 'one';
 function setDebtKhMode(mode){
@@ -1858,8 +1864,8 @@ function renderDdlEntryTable(){
   tbody.innerHTML = ddlEntryRows.map(r=>`
     <tr>
       <td><input type="date" class="ddl-entry-field" data-field="date" data-id="${r.id}" value="${r.date}" style="font-size:12px;padding:6px 3px;"></td>
-      <td><select class="ddl-entry-field" data-field="dealer" data-id="${r.id}" style="font-size:14px;">${buildSelectOptions(dealers, r.dealer, '-- Chọn --', true)}</select></td>
-      <td><select class="ddl-entry-field" data-field="customer" data-id="${r.id}">${buildSelectOptions(customers, r.customer, '-- Chọn --', true)}</select></td>
+      <td><input type="text" list="dealerSuggest" class="ddl-entry-field" data-field="dealer" data-id="${r.id}" style="font-size:14px;" value="${escapeHtml(r.dealer)}" placeholder="Gõ để tìm…"></td>
+      <td><input type="text" list="custSuggest" class="ddl-entry-field" data-field="customer" data-id="${r.id}" value="${escapeHtml(r.customer)}" placeholder="Gõ để tìm…"></td>
       <td><input type="text" class="ddl-entry-field ddl-entry-num" data-field="amount" data-id="${r.id}" value="${escapeHtml(formatDisplayNumber(r.amount))}" inputmode="decimal" style="font-size:16px;font-weight:700;"></td>
       <td><input type="text" class="txt-left ddl-entry-field" data-field="note" data-id="${r.id}" value="${escapeHtml(r.note)}"></td>
       <td><button class="del-row-btn" onclick="removeDdlEntryRow('${r.id}')">🗑</button></td>
@@ -1893,13 +1899,7 @@ function saveDdlEntries(){
 
 // --- Danh sách ---
 function populateDdlFilters(){
-  const dSel = document.getElementById('ddlFilterDealer');
-  const cSel = document.getElementById('ddlFilterCustomer');
-  const curD = dSel.value, curC = cSel.value;
-  dSel.innerHTML = `<option value="">-- Tất cả đại lý --</option>` + dealers.map(d=>`<option value="${escapeHtml(d.name)}">${escapeHtml(d.name)}</option>`).join('');
-  cSel.innerHTML = `<option value="">-- Tất cả khách hàng --</option>` + customers.map(c=>`<option value="${escapeHtml(c.name)}">${escapeHtml(c.name)}</option>`).join('');
-  if(curD) dSel.value = curD;
-  if(curC) cSel.value = curC;
+  // Không cần làm gì thêm — ô lọc giờ là input tìm nhanh gắn với datalist dùng chung, tự giữ nguyên giá trị đang gõ.
 }
 let editingDdlSaleId = null;
 function deleteDdlSale(id, btn){
@@ -1962,8 +1962,8 @@ function renderDdlList(){
           <td class="readonly" colspan="7" style="text-align:left;padding:10px;">
             <div class="row-flex">
               <div class="field"><label>Ngày</label><input type="date" id="editDdlDate-${x.id}" value="${x.date}"></div>
-              <div class="field"><label>Đại lý</label><select id="editDdlDealer-${x.id}">${buildSelectOptions(dealers, x.dealer, '-- Chọn --', true)}</select></div>
-              <div class="field"><label>Khách hàng</label><select id="editDdlCustomer-${x.id}">${buildSelectOptions(customers, x.customer, '-- Chọn --', true)}</select></div>
+              <div class="field"><label>Đại lý</label><input type="text" list="dealerSuggest" id="editDdlDealer-${x.id}" value="${escapeHtml(x.dealer)}" placeholder="Gõ để tìm…"></div>
+              <div class="field"><label>Khách hàng</label><input type="text" list="custSuggest" id="editDdlCustomer-${x.id}" value="${escapeHtml(x.customer)}" placeholder="Gõ để tìm…"></div>
               <div class="field"><label>Tiền NL</label><input type="text" id="editDdlAmount-${x.id}" value="${escapeHtml(formatDisplayNumber(x.amount))}" inputmode="decimal" oninput="formatNumberFieldLive(event)"></div>
               <div class="field" style="flex:2;"><label>Ghi chú</label><input type="text" id="editDdlNote-${x.id}" value="${escapeHtml(x.note||'')}"></div>
             </div>
@@ -2029,16 +2029,7 @@ function undoDdlPayment(id, btn){
   renderDdlPayList();
 }
 function populateDdlPayCustomerSelect(){
-  const el = document.getElementById('ddlPayCustomer');
-  const cur = el.value;
-  el.innerHTML = `<option value="">-- Tất cả khách hàng --</option>` + (customers.length
-    ? customers.map(c=>`<option value="${escapeHtml(c.name)}">${escapeHtml(c.code)} - ${escapeHtml(c.name)}</option>`).join('')
-    : '');
-  if(cur) el.value = cur;
-  const dEl = document.getElementById('ddlPayDealer');
-  const curD = dEl.value;
-  dEl.innerHTML = `<option value="">-- Tất cả đại lý --</option>` + dealers.map(d=>`<option value="${escapeHtml(d.name)}">${escapeHtml(d.name)}</option>`).join('');
-  if(curD) dEl.value = curD;
+  // Không cần làm gì thêm — ô là input tìm nhanh gắn với datalist dùng chung, tự giữ giá trị đang gõ.
 }
 function renderDdlPayList(){
   const wrap = document.getElementById('ddlPayListWrap');
@@ -2377,11 +2368,8 @@ function buildDdlMatrixHtml(){
 // ===== SỔ CHI TIẾT THEO ĐẠI LÝ (Phát sinh / Đã chi / Luỹ kế) =====
 function populateDdlLedgerDealerSelect(){
   const el = document.getElementById('ddlLedgerDealer');
-  const cur = el.value;
-  el.innerHTML = dealers.length
-    ? dealers.map(d=>`<option value="${escapeHtml(d.name)}">${escapeHtml(d.name)}</option>`).join('')
-    : `<option value="">-- Chưa có đại lý --</option>`;
-  if(cur) el.value = cur;
+  if(!el) return;
+  if(!el.value && dealers.length) el.value = dealers[0].name;
 }
 function onDdlLedgerDealerChange(){
   const dealer = document.getElementById('ddlLedgerDealer').value;
@@ -2550,7 +2538,15 @@ function exportCanDoiExcel(){
 }
 
 // ===== CHIA TIỀN - CHIA TIỀN (nhập khoản chi theo mục đích, độc lập với Công nợ Đại lý) =====
-function emptySplitPayRow(){ return { id: uid(), purpose:'', amount:'', note:'' }; }
+const SPLIT_NOTE_DEFAULTS = ['Gấp', 'Chuyển từ Cty'];
+function populateSplitNoteSuggest(){
+  const dl = document.getElementById('splitNoteSuggest');
+  if(!dl) return;
+  const notesInUse = splitPayments.map(x=>x.note).filter(Boolean);
+  const all = [...new Set([...SPLIT_NOTE_DEFAULTS, ...notesInUse])];
+  dl.innerHTML = all.map(n=>`<option value="${escapeHtml(n)}"></option>`).join('');
+}
+function emptySplitPayRow(){ return { id: uid(), date: todayKey(), purpose:'', amount:'', note:'' }; }
 function initSplitPayRows(){
   splitPayRows = Array.from({length:5}, emptySplitPayRow);
 }
@@ -2566,12 +2562,14 @@ function removeSplitPayRow(id){
 function renderSplitPayTable(){
   const tbody = document.getElementById('splitPayTbody');
   if(!tbody) return;
+  populateSplitNoteSuggest();
   tbody.innerHTML = splitPayRows.map((r,i)=>`
     <tr>
       <td class="readonly">${i+1}</td>
-      <td><select class="split-field" data-field="purpose" data-id="${r.id}">${buildSelectOptions(feeTypes, r.purpose, '-- Chọn mục đích --')}</select></td>
+      <td><input type="date" class="split-field" data-field="date" data-id="${r.id}" value="${r.date||todayKey()}" style="font-size:12px;padding:6px 3px;"></td>
+      <td><input type="text" list="feeTypeSuggest" class="split-field" data-field="purpose" data-id="${r.id}" value="${escapeHtml(r.purpose)}" placeholder="Gõ để tìm mục đích…"></td>
       <td><input type="text" class="split-field split-num" data-field="amount" data-id="${r.id}" value="${escapeHtml(formatDisplayNumber(r.amount))}" inputmode="decimal"></td>
-      <td><input type="text" class="txt-left split-field" data-field="note" data-id="${r.id}" value="${escapeHtml(r.note)}"></td>
+      <td><input type="text" list="splitNoteSuggest" class="txt-left split-field" data-field="note" data-id="${r.id}" value="${escapeHtml(r.note)}" placeholder="Gấp, Chuyển từ Cty…"></td>
       <td><button class="del-row-btn" onclick="removeSplitPayRow('${r.id}')">🗑</button></td>
     </tr>
   `).join('');
@@ -2587,13 +2585,13 @@ function renderSplitPayTable(){
     el.onchange = handler;
     if(isNum) el.onblur = forceReformatNumberField;
   });
-  attachGridArrowNav('splitPayTbody', ['amount','note']);
+  attachGridArrowNav('splitPayTbody', ['purpose','amount','note']);
 }
 function saveSplitPayRows(){
   const valid = splitPayRows.filter(r=> r.purpose && Number(rawNumberString(r.amount))>0);
   if(valid.length===0){ alert("Chưa có dòng nào đủ thông tin (cần chọn Mục đích và nhập Số tiền)"); return; }
   valid.forEach(r=>{
-    splitPayments.push({ id: uid(), purpose: r.purpose, amount: Number(rawNumberString(r.amount)), note: r.note, createdAt: Date.now() });
+    splitPayments.push({ id: uid(), date: r.date||todayKey(), purpose: r.purpose, amount: Number(rawNumberString(r.amount)), note: r.note, createdAt: Date.now() });
   });
   saveAll();
   initSplitPayRows();
@@ -2607,11 +2605,12 @@ function cancelEditSplitPay(){ editingSplitPayId = null; renderSplitPayList(); }
 function saveEditSplitPay(id){
   const x = splitPayments.find(s=>s.id===id);
   if(!x) return;
+  const date = document.getElementById('editSplitDate-'+id).value;
   const purpose = document.getElementById('editSplitPurpose-'+id).value;
   const amount = Number(rawNumberString(document.getElementById('editSplitAmount-'+id).value))||0;
   const note = document.getElementById('editSplitNote-'+id).value;
   if(!purpose || amount<=0){ alert("Cần chọn Mục đích và nhập Số tiền hợp lệ"); return; }
-  x.purpose = purpose; x.amount = amount; x.note = note;
+  x.date = date || x.date; x.purpose = purpose; x.amount = amount; x.note = note;
   editingSplitPayId = null;
   saveAll();
   renderSplitPayList();
@@ -2622,22 +2621,60 @@ function deleteSplitPay(id, btn){
   saveAll();
   renderSplitPayList();
 }
+function buildSplitPayReceiptHtml(x){
+  return `
+    <div style="font-family:Inter,sans-serif;color:#111;">
+      <h2 style="text-align:center;margin:0 0 2px;">PHIẾU CHI</h2>
+      <div style="text-align:center;font-size:12.5px;color:#555;margin-bottom:14px;">Ngày: ${formatDateVN(x.date)}</div>
+      <table style="width:100%;border-collapse:collapse;font-size:13px;">
+        <tr><td style="padding:7px 9px;border:1px solid #999;font-weight:600;width:130px;background:#EAF1FB;">Mục đích</td><td style="padding:7px 9px;border:1px solid #999;">${escapeHtml(x.purpose)}</td></tr>
+        <tr><td style="padding:7px 9px;border:1px solid #999;font-weight:600;background:#EAF1FB;">Số tiền</td><td style="padding:7px 9px;border:1px solid #999;font-weight:700;">${formatNumber(x.amount)} đ</td></tr>
+        <tr><td style="padding:7px 9px;border:1px solid #999;font-weight:600;background:#EAF1FB;">Ghi chú</td><td style="padding:7px 9px;border:1px solid #999;">${escapeHtml(x.note||'')}</td></tr>
+      </table>
+    </div>`;
+}
+function shareSplitPayImage(id){
+  const x = splitPayments.find(s=>s.id===id);
+  if(!x) return;
+  shareHtmlAsImage(buildSplitPayReceiptHtml(x), `chi-tien-${x.date}.png`, 'Phiếu chi');
+}
+function viewSplitPay(id){
+  const x = splitPayments.find(s=>s.id===id);
+  if(!x) return;
+  const old = document.getElementById('splitPayViewOverlay');
+  if(old) old.remove();
+  const overlay = document.createElement('div');
+  overlay.id = 'splitPayViewOverlay';
+  overlay.style.cssText = "position:fixed;inset:0;background:rgba(21,34,56,.85);z-index:995;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:20px;overflow:auto;";
+  overlay.innerHTML = `
+    <div style="background:#fff;padding:20px;border-radius:12px;width:100%;max-width:420px;">
+      ${buildSplitPayReceiptHtml(x)}
+    </div>
+    <div class="row-flex" style="width:100%;max-width:420px;">
+      <button class="btn btn-outline" style="background:#fff;" onclick="document.getElementById('splitPayViewOverlay').remove()">✕ Đóng</button>
+      <button class="btn btn-primary" onclick="shareSplitPayImage('${x.id}')">📤 Chia sẻ ảnh</button>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+}
 function renderSplitPayList(){
   const wrap = document.getElementById('splitPayListWrap');
   if(!wrap) return;
+  populateSplitNoteSuggest();
   if(splitPayments.length===0){ wrap.innerHTML = `<div class="empty-state">Chưa có khoản chi nào được lưu</div>`; return; }
-  const list = [...splitPayments].sort((a,b)=> (b.createdAt||0)-(a.createdAt||0));
+  const list = [...splitPayments].sort((a,b)=> b.date===a.date ? (b.createdAt||0)-(a.createdAt||0) : b.date.localeCompare(a.date));
   const total = list.reduce((s,x)=>s+x.amount,0);
   const body = list.map((x,i)=>{
     if(editingSplitPayId===x.id){
       return `
         <tr>
           <td class="readonly">${i+1}</td>
-          <td colspan="3" style="padding:8px;">
+          <td colspan="4" style="padding:8px;">
             <div class="row-flex">
-              <div class="field"><label>Mục đích</label><select id="editSplitPurpose-${x.id}">${buildSelectOptions(feeTypes, x.purpose, '-- Chọn mục đích --')}</select></div>
+              <div class="field"><label>Ngày</label><input type="date" id="editSplitDate-${x.id}" value="${x.date}"></div>
+              <div class="field"><label>Mục đích</label><input type="text" list="feeTypeSuggest" id="editSplitPurpose-${x.id}" value="${escapeHtml(x.purpose)}" placeholder="Gõ để tìm…"></div>
               <div class="field"><label>Số tiền</label><input type="text" id="editSplitAmount-${x.id}" value="${escapeHtml(formatDisplayNumber(x.amount))}" inputmode="decimal" oninput="formatNumberFieldLive(event)"></div>
-              <div class="field"><label>Ghi chú</label><input type="text" id="editSplitNote-${x.id}" value="${escapeHtml(x.note||'')}"></div>
+              <div class="field"><label>Ghi chú</label><input type="text" list="splitNoteSuggest" id="editSplitNote-${x.id}" value="${escapeHtml(x.note||'')}"></div>
             </div>
             <div class="row-flex" style="margin-top:8px;">
               <button class="btn btn-primary btn-sm" onclick="saveEditSplitPay('${x.id}')">💾 Lưu</button>
@@ -2649,10 +2686,13 @@ function renderSplitPayList(){
     return `
       <tr>
         <td class="readonly">${i+1}</td>
+        <td class="readonly">${formatDateVN(x.date)}</td>
         <td style="text-align:left;padding:6px 8px;">${escapeHtml(x.purpose)}</td>
         <td class="readonly">${formatNumber(x.amount)}</td>
         <td style="text-align:left;padding:6px 8px;">${escapeHtml(x.note||'')}</td>
         <td style="white-space:nowrap;">
+          <button class="del-row-btn" title="Xem" onclick="viewSplitPay('${x.id}')">👁</button>
+          <button class="del-row-btn" title="Chia sẻ ảnh" onclick="shareSplitPayImage('${x.id}')">📤</button>
           <button class="del-row-btn" title="Sửa" onclick="editSplitPay('${x.id}')">✏️</button>
           <button class="del-row-btn" title="Xoá" onclick="deleteSplitPay('${x.id}', this)">🗑</button>
         </td>
@@ -2660,9 +2700,9 @@ function renderSplitPayList(){
   }).join('');
   wrap.innerHTML = `
     <table class="grid">
-      <thead><tr><th style="width:40px;">STT</th><th>MỤC ĐÍCH CHI TIỀN</th><th style="width:130px;">SỐ TIỀN</th><th>GHI CHÚ</th><th style="width:90px;"></th></tr></thead>
+      <thead><tr><th style="width:40px;">STT</th><th style="width:88px;">NGÀY</th><th>MỤC ĐÍCH CHI TIỀN</th><th style="width:120px;">SỐ TIỀN</th><th>GHI CHÚ</th><th style="width:130px;"></th></tr></thead>
       <tbody>${body}
-        <tr class="sum-row"><td colspan="2">TỔNG</td><td>${formatNumber(total)}</td><td colspan="2"></td></tr>
+        <tr class="sum-row"><td colspan="3">TỔNG</td><td>${formatNumber(total)}</td><td colspan="2"></td></tr>
       </tbody>
     </table>
   `;
