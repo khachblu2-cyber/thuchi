@@ -62,7 +62,7 @@
   @media print{
     body *{visibility:hidden;}
     #printArea, #printArea *{visibility:visible;}
-    #printArea{position:absolute;top:0;left:0;width:100%;}
+    #printArea{display:block !important;position:absolute;top:0;left:0;width:100%;}
     @page{ size: A4; margin: 12mm; }
   }
   .print-sheet{font-family:'Inter',sans-serif;}
@@ -792,7 +792,7 @@ function renderDealerTable(){
     <tr data-row-id="${r.id}">
       <td class="readonly">${i+1}</td>
       <td><select class="dealer-field" data-field="dealer" data-id="${r.id}" style="font-size:14px;">${buildSelectOptions(dealers, r.dealer, '-- Chọn --', true)}</select></td>
-      <td><input type="text" class="dealer-field dealer-num" data-field="soCon" data-id="${r.id}" value="${escapeHtml(formatDisplayNumber(r.soCon))}" inputmode="decimal"></td>
+      <td><input type="text" class="txt-left dealer-field" data-field="soCon" data-id="${r.id}" value="${escapeHtml(r.soCon)}"></td>
       <td><input type="text" class="dealer-field dealer-num" data-field="kg" data-id="${r.id}" value="${escapeHtml(formatDisplayNumber(r.kg))}" inputmode="decimal" style="font-size:15px;font-weight:600;"></td>
       <td><input type="text" class="dealer-field dealer-num" data-field="giaTien" data-id="${r.id}" value="${escapeHtml(formatDisplayNumber(r.giaTien))}" inputmode="decimal" style="font-size:15px;font-weight:600;"></td>
       <td class="readonly" id="thanhTien-${r.id}">0</td>
@@ -834,6 +834,7 @@ function handleDealerPaste(e){
   const startId = target.dataset.id;
   const startField = target.dataset.field;
   const fieldOrder = ['dealer','soCon','kg','giaTien','ghiChu'];
+  const numericFields = ['kg','giaTien']; // các cột số thật sự cần bỏ dấu phẩy khi dán (Số con giờ cho phép chữ, giữ nguyên)
   let startRowIdx = dealerRows.findIndex(r=>r.id===startId);
   let startColIdx = fieldOrder.indexOf(startField);
   const lines = text.replace(/\r/g,'').split('\n').filter((l,i,arr)=> !(i===arr.length-1 && l===''));
@@ -844,7 +845,10 @@ function handleDealerPaste(e){
     cells.forEach((val, ci)=>{
       const colIdx = startColIdx + ci;
       if(colIdx < fieldOrder.length){
-        dealerRows[rowIdx][fieldOrder[colIdx]] = val.trim();
+        const field = fieldOrder[colIdx];
+        let cleanVal = val.trim();
+        if(numericFields.includes(field)) cleanVal = rawNumberString(cleanVal); // bỏ dấu phẩy Excel dán vào, tránh tính sai thành 0
+        dealerRows[rowIdx][field] = cleanVal;
       }
     });
   });
@@ -1173,11 +1177,8 @@ function saveSheet(){
   if(idx>=0) sheets[idx] = data; else sheets.push(data);
   currentSheetId = data.id;
   saveAll();
-  // Chỉ giữ lại các dòng có dữ liệu trên màn hình, ẩn bớt dòng trống cho gọn
-  dealerRows = dealerRows.filter(r=> r.dealer || r.soCon || r.kg || r.giaTien || r.ghiChu);
-  feeRows = feeRows.filter(r=> r.name || r.amount);
-  deductRows = deductRows.filter(r=> r.name || r.amount);
-  renderDealerTable(); renderFeeTable(); renderDeductTable();
+  // Lưu xong -> tự tạo phiếu mới trắng, không giữ lại dữ liệu cũ trên màn hình
+  newSheet();
   exportSheetImageAndShare(data);
 }
 
