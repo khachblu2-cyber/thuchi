@@ -264,10 +264,13 @@
     <button class="active" id="debtkhModeOneBtn" onclick="setDebtKhMode('one')">👤 1 khách hàng</button>
     <button id="debtkhModeAllBtn" onclick="setDebtKhMode('all')">👥 Tất cả KH</button>
   </div>
-  <div class="card" id="debtkhOneFilterCard">
+  <div class="card" id="debtkhCustomerCard">
     <div class="card-title">Chọn khách hàng</div>
     <select id="debtkhCustomer" onchange="renderDebtKhTable()"></select>
-    <div class="row-flex" style="margin-top:12px;">
+  </div>
+  <div class="card" id="debtkhFilterCard">
+    <div class="card-title">Lọc theo ngày</div>
+    <div class="row-flex">
       <div class="field"><label>Từ ngày</label><input type="date" id="debtkhFrom" onchange="renderDebtKhTable()"></div>
       <div class="field"><label>Đến ngày</label><input type="date" id="debtkhTo" onchange="renderDebtKhTable()"></div>
       <div class="field" style="max-width:140px;"><label>&nbsp;</label><button class="btn btn-outline" style="width:100%;" onclick="clearDebtKhDateFilter()">Xem tất cả</button></div>
@@ -279,6 +282,7 @@
   <div class="row-flex" style="margin:14px 0 30px;">
     <button class="btn btn-outline" id="debtkhExportBtn" onclick="exportDebtKhExcel()">📊 Xuất Excel</button>
     <button class="btn btn-outline" id="debtkhPrintBtn" onclick="printDebtKh()">🖨 In A4</button>
+    <button class="btn btn-primary" onclick="shareDebtKhImage()">📤 Chia sẻ ảnh</button>
   </div>
 </div>
 
@@ -445,6 +449,7 @@ const DEFAULT_DEDUCT_ROWS = 5;
 
 function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
 function todayKey(){ const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+function yesterdayKey(){ const d=new Date(); d.setDate(d.getDate()-1); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
 function loadJSON(key, fallback){ try{ const v=localStorage.getItem(key); return v?JSON.parse(v):fallback; }catch(e){ return fallback; } }
 function formatNumber(n){ return (Number(n)||0).toLocaleString("en-US"); }
 function escapeHtml(str){ const d=document.createElement('div'); d.textContent=str||''; return d.innerHTML; }
@@ -746,8 +751,8 @@ function switchTab(tab){
   document.getElementById('tabBtnCanDoi').classList.toggle('active', tab==='candoi');
   if(tab==='history'){
     if(!document.getElementById('historyFrom').value && !document.getElementById('historyTo').value){
-      document.getElementById('historyFrom').value = todayKey();
-      document.getElementById('historyTo').value = todayKey();
+      document.getElementById('historyFrom').value = yesterdayKey();
+      document.getElementById('historyTo').value = yesterdayKey();
     }
     renderHistory();
   }
@@ -772,7 +777,7 @@ function emptyDeductRow(){ return { id: uid(), name:'', amount:'' }; }
 
 function newSheet(){
   currentSheetId = null;
-  document.getElementById('sheetDate').value = todayKey();
+  document.getElementById('sheetDate').value = yesterdayKey();
   document.getElementById('sheetTitle').value = '';
   populateSheetTitleSelect('');
   document.getElementById('tienCu').value = 0;
@@ -961,7 +966,7 @@ function setDebtKhMode(mode){
   debtkhMode = mode;
   document.getElementById('debtkhModeOneBtn').classList.toggle('active', mode==='one');
   document.getElementById('debtkhModeAllBtn').classList.toggle('active', mode==='all');
-  document.getElementById('debtkhOneFilterCard').classList.toggle('hidden', mode!=='one');
+  document.getElementById('debtkhCustomerCard').classList.toggle('hidden', mode!=='one');
   document.getElementById('debtkhExportBtn').classList.toggle('hidden', mode!=='one');
   document.getElementById('debtkhPrintBtn').classList.toggle('hidden', mode!=='one');
   renderDebtKhTable();
@@ -996,6 +1001,12 @@ function buildCustomerLedger(customerName){
   let luyKe = 0;
   rows.forEach(r=>{ luyKe += r.no - r.co; r.luyKe = luyKe; });
   return rows;
+}
+function getCustomerOpeningBalance(customerName, fromDate){
+  if(!fromDate) return 0;
+  const all = buildCustomerLedger(customerName);
+  const before = all.filter(r=> r.date < fromDate);
+  return before.reduce((s,r)=> s + r.no - r.co, 0);
 }
 function getFilteredDebtKhRows(customerName){
   const from = document.getElementById('debtkhFrom')?.value;
@@ -1033,33 +1044,39 @@ function renderDebtKhTable(){
 function renderDebtKhAllTable(){
   const wrap = document.getElementById('debtkhTableWrap');
   if(customers.length===0){ wrap.innerHTML = `<div class="empty-state">Chưa có khách hàng nào</div>`; return; }
+  const from = document.getElementById('debtkhFrom')?.value;
+  const to = document.getElementById('debtkhTo')?.value;
   const summary = customers.map(c=>{
     const fullLedger = buildCustomerLedger(c.name);
-    const soDuHienTai = fullLedger.length ? fullLedger[fullLedger.length-1].luyKe : 0;
+    const dauKy = getCustomerOpeningBalance(c.name, from);
     const filteredRows = getFilteredDebtKhRows(c.name);
     const tongNo = filteredRows.reduce((s,r)=>s+r.no,0);
     const tongCo = filteredRows.reduce((s,r)=>s+r.co,0);
-    return { code:c.code, name:c.name, tongNo, tongCo, soDuHienTai, hasData: fullLedger.length>0 };
+    const cuoiKy = dauKy + tongNo - tongCo;
+    return { code:c.code, name:c.name, dauKy, tongNo, tongCo, cuoiKy, hasData: fullLedger.length>0 };
   }).filter(x=>x.hasData);
   if(summary.length===0){ wrap.innerHTML = `<div class="empty-state">Chưa có khách hàng nào có phiếu trong Lịch sử phiếu</div>`; return; }
+  const grandDauKy = summary.reduce((s,x)=>s+x.dauKy,0);
   const grandNo = summary.reduce((s,x)=>s+x.tongNo,0);
   const grandCo = summary.reduce((s,x)=>s+x.tongCo,0);
-  const grandBalance = summary.reduce((s,x)=>s+x.soDuHienTai,0);
+  const grandCuoiKy = summary.reduce((s,x)=>s+x.cuoiKy,0);
+  const periodText = (from||to) ? `Từ ${from?formatDateVN(from):'...'} đến ${to?formatDateVN(to):'...'}` : 'Toàn bộ thời gian';
   const body = summary.map((x,i)=>`
     <tr>
       <td class="readonly">${i+1}</td>
       <td style="text-align:left;padding:6px 8px;"><span class="badge">${escapeHtml(x.code)}</span> ${escapeHtml(x.name)}</td>
+      <td class="readonly" style="font-weight:600;">${formatNumber(x.dauKy)}</td>
       <td class="readonly" style="color:${x.tongNo?'var(--rust)':'inherit'};">${x.tongNo?formatNumber(x.tongNo):''}</td>
       <td class="readonly" style="color:${x.tongCo?'var(--moss)':'inherit'};">${x.tongCo?formatNumber(x.tongCo):''}</td>
-      <td class="readonly" style="font-weight:700;">${formatNumber(x.soDuHienTai)}</td>
+      <td class="readonly" style="font-weight:700;">${formatNumber(x.cuoiKy)}</td>
     </tr>
   `).join('');
   wrap.innerHTML = `
-    <div class="muted" style="font-size:12px;margin-bottom:8px;">Cột "Nợ"/"Có" tính theo khoảng ngày đang lọc ở mục "1 khách hàng" (nếu có). Cột "Số dư hiện tại" luôn là số dư thật, xuyên suốt toàn bộ lịch sử.</div>
+    <div class="muted" style="font-size:12px;margin-bottom:8px;">${escapeHtml(periodText)} · Đầu kỳ = tổng phát sinh trước "Từ ngày". Cuối kỳ = Đầu kỳ + Nợ − Có (trong khoảng đã lọc).</div>
     <table class="grid">
-      <thead><tr><th style="width:40px;">STT</th><th>KHÁCH HÀNG</th><th style="width:120px;">NỢ</th><th style="width:120px;">CÓ</th><th style="width:140px;">SỐ DƯ HIỆN TẠI</th></tr></thead>
+      <thead><tr><th style="width:40px;">STT</th><th>KHÁCH HÀNG</th><th style="width:120px;">ĐẦU KỲ</th><th style="width:120px;">NỢ</th><th style="width:120px;">CÓ</th><th style="width:130px;">CUỐI KỲ</th></tr></thead>
       <tbody>${body}
-        <tr class="sum-row"><td colspan="2">TỔNG TẤT CẢ KH</td><td style="color:var(--rust);">${formatNumber(grandNo)}</td><td style="color:var(--moss);">${formatNumber(grandCo)}</td><td>${formatNumber(grandBalance)}</td></tr>
+        <tr class="sum-row"><td colspan="2">TỔNG TẤT CẢ KH</td><td>${formatNumber(grandDauKy)}</td><td style="color:var(--rust);">${formatNumber(grandNo)}</td><td style="color:var(--moss);">${formatNumber(grandCo)}</td><td>${formatNumber(grandCuoiKy)}</td></tr>
       </tbody>
     </table>
   `;
@@ -1108,6 +1125,104 @@ function printDebtKh(){
     </div>
   `;
   window.print();
+}
+
+// ===== CHIA SẺ ẢNH DÙNG CHUNG =====
+function shareHtmlAsImage(innerHtml, fileName, shareTitle){
+  const container = document.createElement('div');
+  container.style.cssText = 'position:fixed;left:-9999px;top:0;background:#fff;padding:18px;width:680px;';
+  container.innerHTML = innerHtml;
+  document.body.appendChild(container);
+  html2canvas(container, { backgroundColor:'#ffffff', scale:2 }).then(canvas=>{
+    container.remove();
+    canvas.toBlob(async (blob)=>{
+      const file = new File([blob], fileName, { type: 'image/png' });
+      if(navigator.canShare && navigator.canShare({ files:[file] })){
+        try{ await navigator.share({ files:[file], title: shareTitle }); return; }
+        catch(err){ /* người dùng huỷ hoặc thiết bị không hỗ trợ -> tải về thay thế */ }
+      }
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = fileName;
+      document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(url);
+      alert('Đã tải ảnh về máy. Mở Zalo/WeChat rồi đính kèm ảnh vừa tải để gửi.');
+    }, 'image/png');
+  }).catch(err=>{
+    container.remove();
+    console.error(err);
+    alert('Không tạo được ảnh: ' + String((err&&err.message)||err));
+  });
+}
+function shareDebtKhImage(){
+  const from = document.getElementById('debtkhFrom')?.value;
+  const to = document.getElementById('debtkhTo')?.value;
+  const periodText = (from||to) ? `Từ ${from?formatDateVN(from):'...'} đến ${to?formatDateVN(to):'...'}` : 'Toàn bộ thời gian';
+  if(debtkhMode==='one'){
+    const customerName = document.getElementById('debtkhCustomer')?.value;
+    if(!customerName){ alert("Chọn khách hàng trước"); return; }
+    const rows = getFilteredDebtKhRows(customerName);
+    if(rows.length===0){ alert("Không có dữ liệu trong khoảng ngày đã chọn"); return; }
+    const tongNo = rows.reduce((s,r)=>s+r.no,0);
+    const tongCo = rows.reduce((s,r)=>s+r.co,0);
+    const body = rows.map((r,i)=>`<tr><td style="padding:4px 6px;border:1px solid #999;">${i+1}</td><td style="padding:4px 6px;border:1px solid #999;text-align:left;">${formatDateVN(r.date)} — ${escapeHtml(r.note)}</td><td style="padding:4px 6px;border:1px solid #999;text-align:right;">${r.no?formatNumber(r.no):''}</td><td style="padding:4px 6px;border:1px solid #999;text-align:right;">${r.co?formatNumber(r.co):''}</td><td style="padding:4px 6px;border:1px solid #999;text-align:right;">${formatNumber(r.luyKe)}</td></tr>`).join('');
+    const html = `
+      <div style="font-family:Inter,sans-serif;color:#111;">
+        <h2 style="text-align:center;margin:0 0 2px;">CÔNG NỢ KHÁCH HÀNG</h2>
+        <div style="text-align:center;font-weight:700;margin-bottom:12px;">${escapeHtml(customerName)} — ${escapeHtml(periodText)}</div>
+        <table style="width:100%;border-collapse:collapse;font-size:12.5px;">
+          <thead><tr>
+            <th style="padding:5px 6px;border:1px solid #999;background:#EAF1FB;">STT</th>
+            <th style="padding:5px 6px;border:1px solid #999;background:#EAF1FB;">DIỄN GIẢI</th>
+            <th style="padding:5px 6px;border:1px solid #999;background:#EAF1FB;">NỢ</th>
+            <th style="padding:5px 6px;border:1px solid #999;background:#EAF1FB;">CÓ</th>
+            <th style="padding:5px 6px;border:1px solid #999;background:#EAF1FB;">LUỸ KẾ</th>
+          </tr></thead>
+          <tbody>
+            ${body}
+            <tr style="font-weight:700;background:#eee;"><td colspan="2" style="padding:5px 6px;border:1px solid #999;">TỔNG</td><td style="padding:5px 6px;border:1px solid #999;text-align:right;">${formatNumber(tongNo)}</td><td style="padding:5px 6px;border:1px solid #999;text-align:right;">${formatNumber(tongCo)}</td><td style="border:1px solid #999;"></td></tr>
+          </tbody>
+        </table>
+      </div>`;
+    shareHtmlAsImage(html, `cong-no-${customerName}-${todayKey()}.png`, `Công nợ ${customerName}`);
+  }else{
+    if(customers.length===0){ alert("Chưa có khách hàng nào"); return; }
+    const summary = customers.map(c=>{
+      const fullLedger = buildCustomerLedger(c.name);
+      const dauKy = getCustomerOpeningBalance(c.name, from);
+      const filteredRows = getFilteredDebtKhRows(c.name);
+      const tongNo = filteredRows.reduce((s,r)=>s+r.no,0);
+      const tongCo = filteredRows.reduce((s,r)=>s+r.co,0);
+      const cuoiKy = dauKy + tongNo - tongCo;
+      return { code:c.code, name:c.name, dauKy, tongNo, tongCo, cuoiKy, hasData: fullLedger.length>0 };
+    }).filter(x=>x.hasData);
+    if(summary.length===0){ alert("Chưa có dữ liệu để chia sẻ"); return; }
+    const grandDauKy = summary.reduce((s,x)=>s+x.dauKy,0);
+    const grandNo = summary.reduce((s,x)=>s+x.tongNo,0);
+    const grandCo = summary.reduce((s,x)=>s+x.tongCo,0);
+    const grandCuoiKy = summary.reduce((s,x)=>s+x.cuoiKy,0);
+    const body = summary.map((x,i)=>`<tr><td style="padding:4px 6px;border:1px solid #999;">${i+1}</td><td style="padding:4px 6px;border:1px solid #999;text-align:left;">${escapeHtml(x.code)} - ${escapeHtml(x.name)}</td><td style="padding:4px 6px;border:1px solid #999;text-align:right;">${formatNumber(x.dauKy)}</td><td style="padding:4px 6px;border:1px solid #999;text-align:right;">${x.tongNo?formatNumber(x.tongNo):''}</td><td style="padding:4px 6px;border:1px solid #999;text-align:right;">${x.tongCo?formatNumber(x.tongCo):''}</td><td style="padding:4px 6px;border:1px solid #999;text-align:right;">${formatNumber(x.cuoiKy)}</td></tr>`).join('');
+    const html = `
+      <div style="font-family:Inter,sans-serif;color:#111;">
+        <h2 style="text-align:center;margin:0 0 2px;">CÔNG NỢ TẤT CẢ KHÁCH HÀNG</h2>
+        <div style="text-align:center;font-weight:700;margin-bottom:12px;">${escapeHtml(periodText)}</div>
+        <table style="width:100%;border-collapse:collapse;font-size:12.5px;">
+          <thead><tr>
+            <th style="padding:5px 6px;border:1px solid #999;background:#EAF1FB;">STT</th>
+            <th style="padding:5px 6px;border:1px solid #999;background:#EAF1FB;">KHÁCH HÀNG</th>
+            <th style="padding:5px 6px;border:1px solid #999;background:#EAF1FB;">ĐẦU KỲ</th>
+            <th style="padding:5px 6px;border:1px solid #999;background:#EAF1FB;">NỢ</th>
+            <th style="padding:5px 6px;border:1px solid #999;background:#EAF1FB;">CÓ</th>
+            <th style="padding:5px 6px;border:1px solid #999;background:#EAF1FB;">CUỐI KỲ</th>
+          </tr></thead>
+          <tbody>
+            ${body}
+            <tr style="font-weight:700;background:#eee;"><td colspan="2" style="padding:5px 6px;border:1px solid #999;">TỔNG</td><td style="padding:5px 6px;border:1px solid #999;text-align:right;">${formatNumber(grandDauKy)}</td><td style="padding:5px 6px;border:1px solid #999;text-align:right;">${formatNumber(grandNo)}</td><td style="padding:5px 6px;border:1px solid #999;text-align:right;">${formatNumber(grandCo)}</td><td style="padding:5px 6px;border:1px solid #999;text-align:right;">${formatNumber(grandCuoiKy)}</td></tr>
+          </tbody>
+        </table>
+      </div>`;
+    shareHtmlAsImage(html, `cong-no-tat-ca-kh-${todayKey()}.png`, 'Công nợ tất cả khách hàng');
+  }
 }
 
 function autoFillTienCuForCustomer(){
@@ -2496,7 +2611,7 @@ function confirmDdlPaymentOut(){
 }
 
 // ===== INIT =====
-document.getElementById('sheetDate').value = todayKey();
+document.getElementById('sheetDate').value = yesterdayKey();
 newSheet();
 updateAllSuggestions();
 initDdlEntryRows();
