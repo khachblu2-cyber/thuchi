@@ -24,6 +24,7 @@
   .header{background:var(--ink);color:#fff;padding:14px 0;}
   .header .title{font-size:19px;font-weight:700;}
   .tabs{display:flex;gap:6px;background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:10;overflow-x:auto;}
+  .sticky-below-tabs{position:sticky;top:var(--tabs-h,46px);z-index:9;background:var(--paper);padding-bottom:2px;}
   .tab-btn{padding:12px 16px;border:none;background:none;font-weight:600;font-size:13.5px;color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap;}
   .section-tab{display:flex;gap:6px;margin:14px 0 0;}
   .section-tab button{flex:1;padding:9px;border-radius:9px;border:1px solid var(--line);background:#fff;color:var(--muted);font-weight:600;font-size:12.5px;cursor:pointer;}
@@ -164,7 +165,7 @@
 
 <!-- ============ TAB: LỊCH SỬ ============ -->
 <div id="historyTab" class="wrap hidden">
-  <div class="card">
+  <div class="card sticky-below-tabs">
     <div class="card-title">Lọc theo ngày</div>
     <div class="row-flex">
       <div class="field"><label>Từ ngày</label><input type="date" id="historyFrom" onchange="renderHistory()"></div>
@@ -181,7 +182,7 @@
 
 <!-- ============ TAB: KHÁCH HÀNG / ĐẠI LÝ / CHI PHÍ ============ -->
 <div id="customersTab" class="wrap hidden">
-  <div class="section-tab">
+  <div class="section-tab sticky-below-tabs">
     <button class="active" id="subBtnDealer" onclick="setCustSection('dealer')">🚚 Đại lý</button>
     <button id="subBtnCust" onclick="setCustSection('cust')">🧑‍💼 Khách hàng</button>
     <button id="subBtnFee" onclick="setCustSection('fee')">💸 Chi phí</button>
@@ -260,20 +261,22 @@
 
 <!-- ============ TAB: CÔNG NỢ KHÁCH HÀNG ============ -->
 <div id="debtkhTab" class="wrap hidden">
-  <div class="section-tab">
-    <button class="active" id="debtkhModeOneBtn" onclick="setDebtKhMode('one')">👤 1 khách hàng</button>
-    <button id="debtkhModeAllBtn" onclick="setDebtKhMode('all')">👥 Tất cả KH</button>
-  </div>
-  <div class="card" id="debtkhCustomerCard">
-    <div class="card-title">Chọn khách hàng</div>
-    <select id="debtkhCustomer" onchange="renderDebtKhTable()"></select>
-  </div>
-  <div class="card" id="debtkhFilterCard">
-    <div class="card-title">Lọc theo ngày</div>
-    <div class="row-flex">
-      <div class="field"><label>Từ ngày</label><input type="date" id="debtkhFrom" onchange="renderDebtKhTable()"></div>
-      <div class="field"><label>Đến ngày</label><input type="date" id="debtkhTo" onchange="renderDebtKhTable()"></div>
-      <div class="field" style="max-width:140px;"><label>&nbsp;</label><button class="btn btn-outline" style="width:100%;" onclick="clearDebtKhDateFilter()">Xem tất cả</button></div>
+  <div class="sticky-below-tabs">
+    <div class="section-tab">
+      <button class="active" id="debtkhModeOneBtn" onclick="setDebtKhMode('one')">👤 1 khách hàng</button>
+      <button id="debtkhModeAllBtn" onclick="setDebtKhMode('all')">👥 Tất cả KH</button>
+    </div>
+    <div class="card" id="debtkhCustomerCard">
+      <div class="card-title">Chọn khách hàng</div>
+      <select id="debtkhCustomer" onchange="renderDebtKhTable()"></select>
+    </div>
+    <div class="card" id="debtkhFilterCard">
+      <div class="card-title">Lọc theo ngày</div>
+      <div class="row-flex">
+        <div class="field"><label>Từ ngày</label><input type="date" id="debtkhFrom" onchange="renderDebtKhTable()"></div>
+        <div class="field"><label>Đến ngày</label><input type="date" id="debtkhTo" onchange="renderDebtKhTable()"></div>
+        <div class="field" style="max-width:140px;"><label>&nbsp;</label><button class="btn btn-outline" style="width:100%;" onclick="clearDebtKhDateFilter()">Xem tất cả</button></div>
+      </div>
     </div>
   </div>
   <div class="card" style="overflow-x:auto;">
@@ -284,11 +287,12 @@
     <button class="btn btn-outline" id="debtkhPrintBtn" onclick="printDebtKh()">🖨 In A4</button>
     <button class="btn btn-primary" onclick="shareDebtKhImage()">📤 Chia sẻ ảnh</button>
   </div>
+
 </div>
 
 <!-- ============ TAB: CÔNG NỢ ĐẠI LÝ ============ -->
 <div id="debtdlTab" class="wrap hidden">
-  <div class="section-tab">
+  <div class="section-tab sticky-below-tabs">
     <button class="active" id="ddlBtnEntry" onclick="setDdlSection('entry')">➕ Nhập liệu</button>
     <button id="ddlBtnList" onclick="setDdlSection('list')">📋 Danh sách</button>
     <button id="ddlBtnPay" onclick="setDdlSection('pay')">💰 Chia tiền Cty</button>
@@ -2133,9 +2137,26 @@ function confirmDdlPayment(){
     setTimeout(()=> exportDdlPaymentImageAndShare(cust, dealerFilter, byCustomer[cust], payDate), idx*400);
   });
 }
+function buildDealerSubtotalRows(items){
+  const map = {};
+  const order = [];
+  items.forEach(x=>{
+    if(!(x.dealer in map)){ map[x.dealer]=0; order.push(x.dealer); }
+    map[x.dealer]+=x.amount;
+  });
+  return order.map(name=>`<tr><td style="padding:5px 7px;border:1px solid #999;text-align:left;">${escapeHtml(name)}</td><td style="padding:5px 7px;border:1px solid #999;text-align:right;">${formatNumber(map[name])}</td></tr>`).join('');
+}
 function buildDdlReceiptInnerHtml(customer, dealerFilter, items, payDate){
   const total = items.reduce((s,x)=>s+x.amount,0);
   const rowsHtml = items.map((x,i)=>`<tr><td style="padding:5px 7px;border:1px solid #999;">${i+1}</td><td style="padding:5px 7px;border:1px solid #999;">${formatDateVN(x.date)}</td><td style="padding:5px 7px;border:1px solid #999;">${escapeHtml(x.dealer)}</td><td style="padding:5px 7px;border:1px solid #999;text-align:right;">${formatNumber(x.amount)}</td></tr>`).join('');
+  const dealerCount = new Set(items.map(x=>x.dealer)).size;
+  const subtotalHtml = dealerCount>1 ? `
+    <div style="text-align:left;font-weight:700;margin:14px 0 4px;font-size:13px;">TỔNG TIỀN TỪNG ĐẠI LÝ</div>
+    <table style="width:100%;border-collapse:collapse;font-size:12.5px;">
+      <thead><tr><th style="padding:5px 7px;border:1px solid #999;background:#EAF1FB;text-align:left;">Đại lý</th><th style="padding:5px 7px;border:1px solid #999;background:#EAF1FB;">Số tiền</th></tr></thead>
+      <tbody>${buildDealerSubtotalRows(items)}</tbody>
+    </table>
+  ` : '';
   return `
     <h2 style="text-align:center;margin:0 0 2px;">XÁC NHẬN CHI TIỀN ĐẠI LÝ</h2>
     <div style="text-align:center;font-weight:700;margin-bottom:4px;">Khách hàng: ${escapeHtml(customer)}${dealerFilter?' — Đại lý: '+escapeHtml(dealerFilter):''}</div>
@@ -2146,6 +2167,7 @@ function buildDdlReceiptInnerHtml(customer, dealerFilter, items, payDate){
         <tr style="font-weight:700;background:#FFF6C9;"><td colspan="3" style="padding:6px;border:1px solid #999;text-align:left;">TỔNG ĐÃ CHI</td><td style="padding:6px;border:1px solid #999;text-align:right;">${formatNumber(total)}</td></tr>
       </tbody>
     </table>
+    ${subtotalHtml}
   `;
 }
 // Bấm 👁 ở "Xem đã chi" -> hiện lại đúng tấm ảnh xác nhận đã gộp cùng khách hàng + cùng ngày chi
@@ -2171,6 +2193,14 @@ function renderDdlReceiptOverlay(customer, paidDate){
       <td style="padding:6px 7px;border:1px solid #ddd;text-align:center;"><button class="del-row-btn" title="Bỏ khoản này khỏi đợt (chuyển về Chưa chi)" onclick="removeFromDdlReceiptBatch('${it.id}','${escapeHtml(customer)}','${paidDate}')">🗑</button></td>
     </tr>
   `).join('');
+  const dealerCount = new Set(group.map(x=>x.dealer)).size;
+  const subtotalHtml = dealerCount>1 ? `
+    <div style="text-align:left;font-weight:700;margin:14px 0 4px;font-size:13px;">TỔNG TIỀN TỪNG ĐẠI LÝ</div>
+    <table style="width:100%;border-collapse:collapse;font-size:13px;">
+      <thead><tr><th style="padding:6px 7px;border:1px solid #ddd;background:#EAF1FB;text-align:left;">Đại lý</th><th style="padding:6px 7px;border:1px solid #ddd;background:#EAF1FB;">Số tiền</th></tr></thead>
+      <tbody>${buildDealerSubtotalRows(group)}</tbody>
+    </table>
+  ` : '';
   const addPickerHtml = candidates.length ? `
     <div style="margin-top:14px;padding-top:12px;border-top:1px dashed #ccc;">
       <label style="font-size:12.5px;font-weight:600;color:var(--muted);">➕ Thêm khoản chưa chi khác của khách này vào đợt:</label>
@@ -2202,6 +2232,7 @@ function renderDdlReceiptOverlay(customer, paidDate){
           <tr style="font-weight:700;background:#FFF6C9;"><td colspan="2" style="padding:8px;border:1px solid #ddd;text-align:left;">TỔNG ĐÃ CHI</td><td style="padding:8px;border:1px solid #ddd;text-align:right;">${formatNumber(total)}</td><td style="border:1px solid #ddd;"></td></tr>
         </tbody>
       </table>
+      ${subtotalHtml}
       ${addPickerHtml}
     </div>
     <div class="row-flex" style="width:100%;max-width:560px;">
@@ -2611,6 +2642,13 @@ function confirmDdlPaymentOut(){
 }
 
 // ===== INIT =====
+function updateStickyOffsets(){
+  const tabsEl = document.querySelector('.tabs');
+  if(tabsEl) document.documentElement.style.setProperty('--tabs-h', tabsEl.offsetHeight + 'px');
+}
+window.addEventListener('resize', updateStickyOffsets);
+window.addEventListener('load', updateStickyOffsets);
+updateStickyOffsets();
 document.getElementById('sheetDate').value = yesterdayKey();
 newSheet();
 updateAllSuggestions();
