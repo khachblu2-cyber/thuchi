@@ -62,7 +62,7 @@
   .badge{display:inline-block;font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:6px;background:#EAF1FB;color:var(--blue);font-family:'IBM Plex Mono',monospace;}
   .save-status{font-size:11px;margin-top:4px;}
   .float-box{position:fixed;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 24px rgba(21,34,56,.22);z-index:998;overflow:hidden;}
-  #searchSuggestBox{max-height:260px;overflow-y:auto;}
+  #searchSuggestBox{max-height:320px;overflow-y:auto;}
   .search-suggest-item{padding:11px 13px;font-size:14px;cursor:pointer;border-bottom:1px solid var(--line);}
   .search-suggest-item:last-child{border-bottom:none;}
   .search-suggest-item:active,.search-suggest-item:hover{background:#EAF1FB;}
@@ -88,6 +88,7 @@
   <div class="wrap">
     <div class="title">📒 Sổ Thu Chi Tổng — 4 Công Ty</div>
     <div class="save-status" id="cloudStatus" style="color:#93A5C4;"></div>
+    <div class="save-status" style="color:#7C93B8;opacity:.75;">Phiên bản: V3.4.5</div>
   </div>
 </div>
 
@@ -367,16 +368,11 @@
 
   <!-- CHIA TIỀN - CHIA TIỀN -->
   <div id="ddlPayOutSection" class="hidden">
-    <div class="card">
-      <div class="card-title">Thông tin đợt chi</div>
-      <div class="row-flex">
-        <div class="field" style="max-width:220px;"><label>Ngày</label><input type="date" id="splitPayDate"></div>
-      </div>
-    </div>
     <div class="card" style="overflow-x:auto;">
       <div class="card-title">Nhập khoản chi</div>
+      <div class="muted" style="font-size:11.5px;margin-bottom:8px;">Gõ vào ô "Mục đích chi tiền" — gợi ý lấy từ danh mục "💸 Chi phí" (mục Khách hàng/Đại lý), gõ chữ khác cũng được.</div>
       <table class="grid" id="splitPayTable">
-        <thead><tr><th style="width:34px;">STT</th><th style="min-width:180px;">Mục đích chi tiền</th><th style="width:190px;">Số tiền</th><th style="width:130px;">Ghi chú</th><th style="width:30px;"></th></tr></thead>
+        <thead><tr><th style="width:34px;">STT</th><th style="min-width:200px;">Mục đích chi tiền</th><th style="width:170px;">Số tiền</th><th style="width:150px;">Ghi chú</th><th style="width:30px;"></th></tr></thead>
         <tbody id="splitPayTbody"></tbody>
       </table>
       <button class="btn btn-outline btn-sm" style="margin-top:8px;" onclick="addSplitPayRow()">➕ Thêm dòng</button>
@@ -388,6 +384,7 @@
 
     <div class="card" style="overflow-x:auto;margin-top:22px;">
       <div class="card-title">Danh sách đã lưu</div>
+      <div id="splitPayTotalsBox" style="margin-bottom:10px;padding:10px 12px;background:#EAF1FB;border-radius:9px;font-weight:700;color:var(--blue-dk);"></div>
       <div id="splitPayListWrap"></div>
     </div>
   </div>
@@ -473,7 +470,6 @@ const SEARCH_SOURCES = {
   dealer: () => dealers.map(d=>d.name),
   customer: () => customers.map(c=>c.name),
   feeType: () => feeTypes.map(f=>f.name),
-  note: () => [...new Set([...SPLIT_NOTE_DEFAULTS, ...splitPayments.map(x=>x.note).filter(Boolean)])],
 };
 let activeSearchInput = null;
 function positionFloatingBox(box, input){
@@ -495,7 +491,7 @@ function renderSearchSuggest(input, sourceKey){
   if(!provider){ box.classList.add('hidden'); return; }
   const all = [...new Set(provider())].filter(Boolean);
   const q = normalizeVN(input.value);
-  const filtered = (q ? all.filter(name => normalizeVN(name).includes(q)) : all).slice(0, 8);
+  const filtered = q ? all.filter(name => normalizeVN(name).includes(q)) : all;
   if(all.length===0){ box.classList.add('hidden'); return; }
   box.innerHTML = filtered.length
     ? filtered.map(name=>`<div class="search-suggest-item" data-value="${escapeHtml(name)}">${escapeHtml(name)}</div>`).join('')
@@ -2610,12 +2606,9 @@ function exportCanDoiExcel(){
 }
 
 // ===== CHIA TIỀN - CHIA TIỀN (nhập khoản chi theo mục đích, độc lập với Công nợ Đại lý) =====
-const SPLIT_NOTE_DEFAULTS = ['Gấp', 'Chuyển từ Cty'];
 function emptySplitPayRow(){ return { id: uid(), purpose:'', amount:'', note:'' }; }
 function initSplitPayRows(){
   splitPayRows = Array.from({length:5}, emptySplitPayRow);
-  const dateEl = document.getElementById('splitPayDate');
-  if(dateEl) dateEl.value = todayKey();
 }
 function resetSplitPayForm(){
   initSplitPayRows();
@@ -2638,7 +2631,7 @@ function renderSplitPayTable(){
       <td class="readonly">${i+1}</td>
       <td><input type="text" data-src="feeType" class="split-field" data-field="purpose" data-id="${r.id}" value="${escapeHtml(r.purpose)}" placeholder="Gõ để tìm mục đích…"></td>
       <td><input type="text" class="split-field split-num" data-field="amount" data-id="${r.id}" value="${escapeHtml(formatDisplayNumber(r.amount))}" inputmode="decimal"></td>
-      <td><input type="text" data-src="note" class="txt-left split-field" data-field="note" data-id="${r.id}" value="${escapeHtml(r.note)}" placeholder="Gấp, Chuyển từ Cty…"></td>
+      <td><input type="text" class="txt-left split-field" data-field="note" data-id="${r.id}" value="${escapeHtml(r.note)}"></td>
       <td><button class="del-row-btn" onclick="removeSplitPayRow('${r.id}')">🗑</button></td>
     </tr>
   `).join('');
@@ -2656,17 +2649,17 @@ function renderSplitPayTable(){
   });
   attachGridArrowNav('splitPayTbody', ['purpose','amount','note']);
 }
-function buildSplitPayBatchReceiptHtml(items, date){
+function buildSplitPayBatchReceiptHtml(items){
   const total = items.reduce((s,x)=>s+x.amount,0);
   const rows = items.map((x,i)=>`<tr><td style="padding:5px 7px;border:1px solid #999;">${i+1}</td><td style="padding:5px 7px;border:1px solid #999;text-align:left;">${escapeHtml(x.purpose)}</td><td style="padding:5px 7px;border:1px solid #999;text-align:right;">${formatNumber(x.amount)}</td><td style="padding:5px 7px;border:1px solid #999;text-align:left;">${escapeHtml(x.note||'')}</td></tr>`).join('');
   return `
     <div style="font-family:Inter,sans-serif;color:#111;">
-      <h2 style="text-align:center;margin:0 0 2px;">PHIẾU CHI</h2>
-      <div style="text-align:center;font-size:12.5px;color:#555;margin-bottom:12px;">Ngày: ${formatDateVN(date)}</div>
+      <h2 style="text-align:center;margin:0 0 2px;">Ngày ${formatDateVN(todayKey())}</h2>
+      <div style="text-align:center;font-weight:700;margin-bottom:12px;">PHIẾU CHI</div>
       <table style="width:100%;border-collapse:collapse;font-size:12.5px;">
         <thead><tr>
           <th style="padding:5px 7px;border:1px solid #999;background:#EAF1FB;">STT</th>
-          <th style="padding:5px 7px;border:1px solid #999;background:#EAF1FB;">Mục đích</th>
+          <th style="padding:5px 7px;border:1px solid #999;background:#EAF1FB;">Mục đích chi tiền</th>
           <th style="padding:5px 7px;border:1px solid #999;background:#EAF1FB;">Số tiền</th>
           <th style="padding:5px 7px;border:1px solid #999;background:#EAF1FB;">Ghi chú</th>
         </tr></thead>
@@ -2679,15 +2672,15 @@ function buildSplitPayBatchReceiptHtml(items, date){
 function saveSplitPayRows(){
   const valid = splitPayRows.filter(r=> r.purpose && Number(rawNumberString(r.amount))>0);
   if(valid.length===0){ alert("Chưa có dòng nào đủ thông tin (cần chọn Mục đích và nhập Số tiền)"); return; }
-  const batchDate = document.getElementById('splitPayDate')?.value || todayKey();
+  const batchId = uid();
   const now = Date.now();
-  const savedItems = valid.map(r=> ({ id: uid(), date: batchDate, purpose: r.purpose, amount: Number(rawNumberString(r.amount)), note: r.note, createdAt: now }));
+  const savedItems = valid.map(r=> ({ id: uid(), batchId, purpose: r.purpose, amount: Number(rawNumberString(r.amount)), note: r.note, createdAt: now }));
   savedItems.forEach(item=> splitPayments.push(item));
   saveAll();
   initSplitPayRows();
   renderSplitPayTable();
   renderSplitPayList();
-  shareHtmlAsImage(buildSplitPayBatchReceiptHtml(savedItems, batchDate), `chi-tien-${batchDate}.png`, 'Phiếu chi');
+  shareHtmlAsImage(buildSplitPayBatchReceiptHtml(savedItems), `chi-tien-${todayKey()}.png`, 'Phiếu chi');
 }
 let editingSplitPayId = null;
 function editSplitPay(id){ editingSplitPayId = id; renderSplitPayList(); }
@@ -2695,12 +2688,11 @@ function cancelEditSplitPay(){ editingSplitPayId = null; renderSplitPayList(); }
 function saveEditSplitPay(id){
   const x = splitPayments.find(s=>s.id===id);
   if(!x) return;
-  const date = document.getElementById('editSplitDate-'+id).value;
   const purpose = document.getElementById('editSplitPurpose-'+id).value;
   const amount = Number(rawNumberString(document.getElementById('editSplitAmount-'+id).value))||0;
   const note = document.getElementById('editSplitNote-'+id).value;
   if(!purpose || amount<=0){ alert("Cần chọn Mục đích và nhập Số tiền hợp lệ"); return; }
-  x.date = date || x.date; x.purpose = purpose; x.amount = amount; x.note = note;
+  x.purpose = purpose; x.amount = amount; x.note = note;
   editingSplitPayId = null;
   saveAll();
   renderSplitPayList();
@@ -2711,64 +2703,24 @@ function deleteSplitPay(id, btn){
   saveAll();
   renderSplitPayList();
 }
-function formatTimeVN(ts){
-  if(!ts) return '';
-  const d = new Date(ts);
-  return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
-}
-function buildSplitPayReceiptHtml(x){
-  return `
-    <div style="font-family:Inter,sans-serif;color:#111;">
-      <h2 style="text-align:center;margin:0 0 2px;">PHIẾU CHI</h2>
-      <div style="text-align:center;font-size:12.5px;color:#555;margin-bottom:14px;">Ngày: ${formatDateVN(x.date)}${x.createdAt?' — Tạo lúc '+formatTimeVN(x.createdAt):''}</div>
-      <table style="width:100%;border-collapse:collapse;font-size:13px;">
-        <tr><td style="padding:7px 9px;border:1px solid #999;font-weight:600;width:130px;background:#EAF1FB;">Mục đích</td><td style="padding:7px 9px;border:1px solid #999;">${escapeHtml(x.purpose)}</td></tr>
-        <tr><td style="padding:7px 9px;border:1px solid #999;font-weight:600;background:#EAF1FB;">Số tiền</td><td style="padding:7px 9px;border:1px solid #999;font-weight:700;">${formatNumber(x.amount)} đ</td></tr>
-        <tr><td style="padding:7px 9px;border:1px solid #999;font-weight:600;background:#EAF1FB;">Ghi chú</td><td style="padding:7px 9px;border:1px solid #999;">${escapeHtml(x.note||'')}</td></tr>
-      </table>
-    </div>`;
-}
-function shareSplitPayImage(id){
-  const x = splitPayments.find(s=>s.id===id);
-  if(!x) return;
-  shareHtmlAsImage(buildSplitPayReceiptHtml(x), `chi-tien-${x.date}.png`, 'Phiếu chi');
-}
-function viewSplitPay(id){
-  const x = splitPayments.find(s=>s.id===id);
-  if(!x) return;
-  const old = document.getElementById('splitPayViewOverlay');
-  if(old) old.remove();
-  const overlay = document.createElement('div');
-  overlay.id = 'splitPayViewOverlay';
-  overlay.style.cssText = "position:fixed;inset:0;background:rgba(21,34,56,.85);z-index:995;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:20px;overflow:auto;";
-  overlay.innerHTML = `
-    <div style="background:#fff;padding:20px;border-radius:12px;width:100%;max-width:420px;">
-      ${buildSplitPayReceiptHtml(x)}
-    </div>
-    <div class="row-flex" style="width:100%;max-width:420px;">
-      <button class="btn btn-outline" style="background:#fff;" onclick="document.getElementById('splitPayViewOverlay').remove()">✕ Đóng</button>
-      <button class="btn btn-primary" onclick="shareSplitPayImage('${x.id}')">📤 Chia sẻ ảnh</button>
-    </div>
-  `;
-  document.body.appendChild(overlay);
-}
 function renderSplitPayList(){
   const wrap = document.getElementById('splitPayListWrap');
+  const totalsBox = document.getElementById('splitPayTotalsBox');
   if(!wrap) return;
-  if(splitPayments.length===0){ wrap.innerHTML = `<div class="empty-state">Chưa có khoản chi nào được lưu</div>`; return; }
-  const list = [...splitPayments].sort((a,b)=> b.date===a.date ? (b.createdAt||0)-(a.createdAt||0) : b.date.localeCompare(a.date));
+  if(splitPayments.length===0){ wrap.innerHTML = `<div class="empty-state">Chưa có khoản chi nào được lưu.<br>Điền <b>Mục đích</b> + <b>Số tiền</b> ở bảng "Nhập khoản chi" phía trên rồi bấm "💾 Lưu các khoản chi" — khoản chi sẽ hiện ra ở đây.</div>`; if(totalsBox) totalsBox.textContent=''; return; }
+  const list = [...splitPayments].sort((a,b)=> (b.createdAt||0)-(a.createdAt||0));
   const total = list.reduce((s,x)=>s+x.amount,0);
+  if(totalsBox) totalsBox.textContent = `💰 Tổng tiền: ${formatNumber(total)} đ   |   ${list.length} khoản chi`;
   const body = list.map((x,i)=>{
     if(editingSplitPayId===x.id){
       return `
         <tr>
           <td class="readonly">${i+1}</td>
-          <td colspan="4" style="padding:8px;">
+          <td colspan="3" style="padding:8px;">
             <div class="row-flex">
-              <div class="field"><label>Ngày</label><input type="date" id="editSplitDate-${x.id}" value="${x.date}"></div>
               <div class="field"><label>Mục đích</label><input type="text" data-src="feeType" id="editSplitPurpose-${x.id}" value="${escapeHtml(x.purpose)}" placeholder="Gõ để tìm…"></div>
               <div class="field"><label>Số tiền</label><input type="text" id="editSplitAmount-${x.id}" value="${escapeHtml(formatDisplayNumber(x.amount))}" inputmode="decimal" oninput="formatNumberFieldLive(event)"></div>
-              <div class="field"><label>Ghi chú</label><input type="text" data-src="note" id="editSplitNote-${x.id}" value="${escapeHtml(x.note||'')}"></div>
+              <div class="field"><label>Ghi chú</label><input type="text" id="editSplitNote-${x.id}" value="${escapeHtml(x.note||'')}"></div>
             </div>
             <div class="row-flex" style="margin-top:8px;">
               <button class="btn btn-primary btn-sm" onclick="saveEditSplitPay('${x.id}')">💾 Lưu</button>
@@ -2780,13 +2732,11 @@ function renderSplitPayList(){
     return `
       <tr>
         <td class="readonly">${i+1}</td>
-        <td class="readonly">${formatDateVN(x.date)}${x.createdAt?`<div style="font-size:10px;color:var(--muted);font-weight:400;">${formatTimeVN(x.createdAt)}</div>`:''}</td>
         <td style="text-align:left;padding:6px 8px;">${escapeHtml(x.purpose)}</td>
         <td class="readonly">${formatNumber(x.amount)}</td>
         <td style="text-align:left;padding:6px 8px;">${escapeHtml(x.note||'')}</td>
         <td style="white-space:nowrap;">
-          <button class="del-row-btn" title="Xem" onclick="viewSplitPay('${x.id}')">👁</button>
-          <button class="del-row-btn" title="Chia sẻ ảnh" onclick="shareSplitPayImage('${x.id}')">📤</button>
+          <button class="del-row-btn" title="Xem" onclick="viewSplitPayImage('${x.id}')">👁</button>
           <button class="del-row-btn" title="Sửa" onclick="editSplitPay('${x.id}')">✏️</button>
           <button class="del-row-btn" title="Xoá" onclick="deleteSplitPay('${x.id}', this)">🗑</button>
         </td>
@@ -2794,12 +2744,43 @@ function renderSplitPayList(){
   }).join('');
   wrap.innerHTML = `
     <table class="grid">
-      <thead><tr><th style="width:40px;">STT</th><th style="width:88px;">NGÀY</th><th>MỤC ĐÍCH CHI TIỀN</th><th style="width:150px;">SỐ TIỀN</th><th style="width:140px;">GHI CHÚ</th><th style="width:130px;"></th></tr></thead>
+      <thead><tr><th style="width:40px;">STT</th><th>MỤC ĐÍCH CHI TIỀN</th><th style="width:150px;">SỐ TIỀN</th><th style="width:150px;">GHI CHÚ</th><th style="width:110px;"></th></tr></thead>
       <tbody>${body}
-        <tr class="sum-row"><td colspan="3">TỔNG</td><td>${formatNumber(total)}</td><td colspan="2"></td></tr>
+        <tr class="sum-row"><td colspan="2">TỔNG</td><td>${formatNumber(total)}</td><td colspan="2"></td></tr>
       </tbody>
     </table>
   `;
+}
+function getSplitPayBatchItems(x){
+  // Nếu có batchId (lưu từ bản mới) -> gom tất cả mã cùng đợt lưu. Không có (dữ liệu cũ) -> chỉ chính nó.
+  if(x.batchId) return splitPayments.filter(s=>s.batchId===x.batchId);
+  return [x];
+}
+function viewSplitPayImage(id){
+  const x = splitPayments.find(s=>s.id===id);
+  if(!x) return;
+  const items = getSplitPayBatchItems(x);
+  const container = document.createElement('div');
+  container.style.cssText = 'position:fixed;left:-9999px;top:0;background:#fff;padding:18px;width:520px;';
+  container.innerHTML = buildSplitPayBatchReceiptHtml(items);
+  document.body.appendChild(container);
+  html2canvas(container, { backgroundColor:'#ffffff', scale:2 }).then(canvas=>{
+    container.remove();
+    const dataUrl = canvas.toDataURL('image/png');
+    const old = document.getElementById('imgPreviewOverlay');
+    if(old) old.remove();
+    const overlay = document.createElement('div');
+    overlay.id = 'imgPreviewOverlay';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(21,34,56,.9);z-index:997;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:16px;overflow:auto;';
+    overlay.innerHTML = `
+      <img src="${dataUrl}" style="max-width:94%;max-height:75vh;border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,.4);">
+      <div class="row-flex" style="width:280px;">
+        <button class="btn btn-outline" style="background:#fff;" onclick="document.getElementById('imgPreviewOverlay').remove()">✕ Đóng</button>
+        <button class="btn btn-primary" onclick="shareHtmlAsImage(buildSplitPayBatchReceiptHtml(getSplitPayBatchItems(splitPayments.find(s=>s.id==='${id}'))), 'chi-tien-${todayKey()}.png', 'Phiếu chi')">📤 Chia sẻ</button>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+  }).catch(err=>{ container.remove(); alert('Không tạo được ảnh xem trước: ' + String((err&&err.message)||err)); });
 }
 
 // ===== INIT =====
