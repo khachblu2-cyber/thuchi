@@ -46,6 +46,8 @@
   .row-flex{display:flex;gap:10px;flex-wrap:wrap;}
   .row-flex > .field{flex:1;min-width:160px;}
   table.grid{width:100%;border-collapse:collapse;font-size:13px;}
+  #splitPayTable{table-layout:fixed;min-width:580px;}
+  #splitPaySavedTable{table-layout:fixed;min-width:600px;}
   #dealerTable{min-width:760px;}
   #ddlEntryTable{min-width:850px;}
   table.grid th{background:var(--ink);color:#fff;padding:7px 8px;text-align:center;font-size:11.5px;white-space:nowrap;}
@@ -88,7 +90,7 @@
   <div class="wrap">
     <div class="title">📒 Sổ Thu Chi Tổng — 4 Công Ty</div>
     <div class="save-status" id="cloudStatus" style="color:#93A5C4;"></div>
-    <div class="save-status" style="color:#7C93B8;opacity:.75;">Phiên bản: V3.4.9</div>
+    <div class="save-status" style="color:#7C93B8;opacity:.75;">Phiên bản: V3.5.0</div>
   </div>
 </div>
 
@@ -373,7 +375,7 @@
       <div class="field" style="max-width:200px;margin-bottom:12px;"><label>Ngày</label><input type="date" id="splitPayDate"></div>
       <div class="muted" style="font-size:11.5px;margin-bottom:8px;">Gõ vào ô "Mục đích chi tiền" — gợi ý lấy từ danh mục "💸 Chi phí" (mục Khách hàng/Đại lý), gõ chữ khác cũng được.</div>
       <table class="grid" id="splitPayTable">
-        <thead><tr><th style="width:34px;">STT</th><th style="width:200px;">Mục đích chi tiền</th><th style="width:210px;">Số tiền</th><th style="width:150px;">Ghi chú</th><th style="width:30px;"></th></tr></thead>
+        <thead><tr><th style="width:32px;">STT</th><th style="width:140px;">Mục đích chi tiền</th><th style="width:250px;">Số tiền</th><th style="width:130px;">Ghi chú</th><th style="width:28px;"></th></tr></thead>
         <tbody id="splitPayTbody"></tbody>
       </table>
       <button class="btn btn-outline btn-sm" style="margin-top:8px;" onclick="addSplitPayRow()">➕ Thêm dòng</button>
@@ -2770,8 +2772,8 @@ function renderSplitPayList(){
       </tr>`;
   }).join('');
   wrap.innerHTML = `
-    <table class="grid">
-      <thead><tr><th style="width:40px;">STT</th><th>MỤC ĐÍCH CHI TIỀN</th><th style="width:150px;">SỐ TIỀN</th><th style="width:170px;">GHI CHÚ</th><th style="width:110px;"></th></tr></thead>
+    <table class="grid" id="splitPaySavedTable">
+      <thead><tr><th style="width:36px;">STT</th><th style="width:130px;">MỤC ĐÍCH CHI TIỀN</th><th style="width:180px;">SỐ TIỀN</th><th style="width:150px;">GHI CHÚ</th><th style="width:104px;"></th></tr></thead>
       <tbody>${body}
         <tr class="sum-row"><td colspan="2">TỔNG</td><td>${formatNumber(total)}</td><td colspan="2"></td></tr>
       </tbody>
