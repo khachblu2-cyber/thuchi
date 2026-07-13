@@ -67,10 +67,6 @@
   .search-suggest-item:last-child{border-bottom:none;}
   .search-suggest-item:active,.search-suggest-item:hover{background:#EAF1FB;}
   .search-suggest-empty{padding:11px 13px;font-size:13px;color:var(--muted);}
-  #numPadBox{display:flex;gap:6px;padding:7px;}
-  #numPadBox button{flex:1;padding:12px 4px;font-size:14.5px;font-weight:700;border:1px solid var(--line);border-radius:8px;background:#F5F7FA;color:var(--ink);cursor:pointer;white-space:nowrap;}
-  #numPadBox button:active{background:#EAF1FB;}
-  #numPadBox button.numpad-clear{color:var(--rust);}
   @media print{
     body *{visibility:hidden;}
     #printArea, #printArea *{visibility:visible;}
@@ -380,7 +376,7 @@
     <div class="card" style="overflow-x:auto;">
       <div class="card-title">Nhập khoản chi</div>
       <table class="grid" id="splitPayTable">
-        <thead><tr><th style="width:34px;">STT</th><th style="min-width:200px;">Mục đích chi tiền</th><th style="width:150px;">Số tiền</th><th>Ghi chú</th><th style="width:30px;"></th></tr></thead>
+        <thead><tr><th style="width:34px;">STT</th><th style="min-width:180px;">Mục đích chi tiền</th><th style="width:190px;">Số tiền</th><th style="width:130px;">Ghi chú</th><th style="width:30px;"></th></tr></thead>
         <tbody id="splitPayTbody"></tbody>
       </table>
       <button class="btn btn-outline btn-sm" style="margin-top:8px;" onclick="addSplitPayRow()">➕ Thêm dòng</button>
@@ -439,13 +435,6 @@
 
 <div id="printArea" style="display:none;"></div>
 <div id="searchSuggestBox" class="float-box hidden"></div>
-<div id="numPadBox" class="float-box hidden">
-  <button type="button" onmousedown="event.preventDefault();numPadAppend('000')">000</button>
-  <button type="button" onmousedown="event.preventDefault();numPadAppend('00')">00</button>
-  <button type="button" onmousedown="event.preventDefault();numPadAppend('0')">0</button>
-  <button type="button" onmousedown="event.preventDefault();numPadBackspace()">⌫</button>
-  <button type="button" class="numpad-clear" onmousedown="event.preventDefault();numPadClear()">Xoá</button>
-</div>
 
 <script>
 // ===== CLOUD CONFIG (Firebase) =====
@@ -530,7 +519,6 @@ function closeSearchSuggest(){
 document.addEventListener('focusin', (e)=>{
   const src = e.target && e.target.dataset ? e.target.dataset.src : null;
   if(src) openSearchSuggest(e.target, src);
-  else if(e.target && e.target.matches && e.target.matches('input[inputmode="decimal"]')) openNumPad(e.target);
 });
 document.addEventListener('input', (e)=>{
   if(activeSearchInput===e.target && e.target.dataset.src) renderSearchSuggest(e.target, e.target.dataset.src);
@@ -538,48 +526,12 @@ document.addEventListener('input', (e)=>{
 document.addEventListener('focusout', (e)=>{
   setTimeout(()=>{
     if(activeSearchInput===e.target) closeSearchSuggest();
-    if(activeNumInput===e.target) closeNumPad();
   }, 150);
 });
 window.addEventListener('scroll', ()=>{
   if(activeSearchInput) positionFloatingBox(document.getElementById('searchSuggestBox'), activeSearchInput);
-  if(activeNumInput) positionFloatingBox(document.getElementById('numPadBox'), activeNumInput);
 }, true);
-window.addEventListener('resize', ()=>{ closeSearchSuggest(); closeNumPad(); });
-
-// ===== BÀN PHÍM SỐ NHANH (000 / 00 / 0 / xoá) CHO CÁC Ô NHẬP TIỀN =====
-let activeNumInput = null;
-function openNumPad(input){
-  activeNumInput = input;
-  const box = document.getElementById('numPadBox');
-  positionFloatingBox(box, input);
-  box.classList.remove('hidden');
-}
-function closeNumPad(){
-  document.getElementById('numPadBox').classList.add('hidden');
-  activeNumInput = null;
-}
-function numPadAppend(str){
-  if(!activeNumInput) return;
-  const raw = rawNumberString(activeNumInput.value) + str;
-  activeNumInput.value = raw;
-  activeNumInput.focus();
-  activeNumInput.dispatchEvent(new Event('input', {bubbles:true}));
-  positionFloatingBox(document.getElementById('numPadBox'), activeNumInput);
-}
-function numPadBackspace(){
-  if(!activeNumInput) return;
-  const raw = rawNumberString(activeNumInput.value).slice(0,-1);
-  activeNumInput.value = raw;
-  activeNumInput.focus();
-  activeNumInput.dispatchEvent(new Event('input', {bubbles:true}));
-}
-function numPadClear(){
-  if(!activeNumInput) return;
-  activeNumInput.value = '';
-  activeNumInput.focus();
-  activeNumInput.dispatchEvent(new Event('input', {bubbles:true}));
-}
+window.addEventListener('resize', ()=>{ closeSearchSuggest(); });
 
 
 // ===== XÁC NHẬN XOÁ/HUỶ ĐÁNG TIN CẬY (thay cho confirm() bị chặn trong khung xem trước) =====
@@ -2704,19 +2656,38 @@ function renderSplitPayTable(){
   });
   attachGridArrowNav('splitPayTbody', ['purpose','amount','note']);
 }
+function buildSplitPayBatchReceiptHtml(items, date){
+  const total = items.reduce((s,x)=>s+x.amount,0);
+  const rows = items.map((x,i)=>`<tr><td style="padding:5px 7px;border:1px solid #999;">${i+1}</td><td style="padding:5px 7px;border:1px solid #999;text-align:left;">${escapeHtml(x.purpose)}</td><td style="padding:5px 7px;border:1px solid #999;text-align:right;">${formatNumber(x.amount)}</td><td style="padding:5px 7px;border:1px solid #999;text-align:left;">${escapeHtml(x.note||'')}</td></tr>`).join('');
+  return `
+    <div style="font-family:Inter,sans-serif;color:#111;">
+      <h2 style="text-align:center;margin:0 0 2px;">PHIẾU CHI</h2>
+      <div style="text-align:center;font-size:12.5px;color:#555;margin-bottom:12px;">Ngày: ${formatDateVN(date)}</div>
+      <table style="width:100%;border-collapse:collapse;font-size:12.5px;">
+        <thead><tr>
+          <th style="padding:5px 7px;border:1px solid #999;background:#EAF1FB;">STT</th>
+          <th style="padding:5px 7px;border:1px solid #999;background:#EAF1FB;">Mục đích</th>
+          <th style="padding:5px 7px;border:1px solid #999;background:#EAF1FB;">Số tiền</th>
+          <th style="padding:5px 7px;border:1px solid #999;background:#EAF1FB;">Ghi chú</th>
+        </tr></thead>
+        <tbody>${rows}
+          <tr style="font-weight:700;background:#FFF6C9;"><td colspan="2" style="padding:6px;border:1px solid #999;text-align:left;">TỔNG</td><td style="padding:6px;border:1px solid #999;text-align:right;">${formatNumber(total)}</td><td style="border:1px solid #999;"></td></tr>
+        </tbody>
+      </table>
+    </div>`;
+}
 function saveSplitPayRows(){
   const valid = splitPayRows.filter(r=> r.purpose && Number(rawNumberString(r.amount))>0);
   if(valid.length===0){ alert("Chưa có dòng nào đủ thông tin (cần chọn Mục đích và nhập Số tiền)"); return; }
   const batchDate = document.getElementById('splitPayDate')?.value || todayKey();
   const now = Date.now();
-  valid.forEach(r=>{
-    splitPayments.push({ id: uid(), date: batchDate, purpose: r.purpose, amount: Number(rawNumberString(r.amount)), note: r.note, createdAt: now });
-  });
+  const savedItems = valid.map(r=> ({ id: uid(), date: batchDate, purpose: r.purpose, amount: Number(rawNumberString(r.amount)), note: r.note, createdAt: now }));
+  savedItems.forEach(item=> splitPayments.push(item));
   saveAll();
   initSplitPayRows();
   renderSplitPayTable();
   renderSplitPayList();
-  alert(`Đã lưu ${valid.length} khoản chi.`);
+  shareHtmlAsImage(buildSplitPayBatchReceiptHtml(savedItems, batchDate), `chi-tien-${batchDate}.png`, 'Phiếu chi');
 }
 let editingSplitPayId = null;
 function editSplitPay(id){ editingSplitPayId = id; renderSplitPayList(); }
@@ -2823,7 +2794,7 @@ function renderSplitPayList(){
   }).join('');
   wrap.innerHTML = `
     <table class="grid">
-      <thead><tr><th style="width:40px;">STT</th><th style="width:88px;">NGÀY</th><th>MỤC ĐÍCH CHI TIỀN</th><th style="width:120px;">SỐ TIỀN</th><th>GHI CHÚ</th><th style="width:130px;"></th></tr></thead>
+      <thead><tr><th style="width:40px;">STT</th><th style="width:88px;">NGÀY</th><th>MỤC ĐÍCH CHI TIỀN</th><th style="width:150px;">SỐ TIỀN</th><th style="width:140px;">GHI CHÚ</th><th style="width:130px;"></th></tr></thead>
       <tbody>${body}
         <tr class="sum-row"><td colspan="3">TỔNG</td><td>${formatNumber(total)}</td><td colspan="2"></td></tr>
       </tbody>
