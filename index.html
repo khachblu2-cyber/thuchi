@@ -7,11 +7,11 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>Sổ Thu Chi Tổng - 4 Công Ty</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js" defer></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js" defer></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js" defer></script>
 <style>
   :root{
     --ink:#152238; --paper:#F1F4F8; --card:#FFFFFF; --blue:#1D5FAE; --blue-dk:#123E77;
@@ -90,7 +90,7 @@
   <div class="wrap">
     <div class="title">📒 Sổ Thu Chi Tổng — 4 Công Ty</div>
     <div class="save-status" id="cloudStatus" style="color:#93A5C4;"></div>
-    <div class="save-status" style="color:#7C93B8;opacity:.75;">Phiên bản: V3.5.7</div>
+    <div class="save-status" style="color:#7C93B8;opacity:.75;">Phiên bản: V3.8.1</div>
   </div>
 </div>
 
@@ -102,6 +102,7 @@
     <button class="tab-btn" id="tabBtnDebtKH" onclick="switchTab('debtkh')">🧮 Công nợ KH</button>
     <button class="tab-btn" id="tabBtnDebtDL" onclick="switchTab('debtdl')">🚚 Công nợ Đại lý</button>
     <button class="tab-btn" id="tabBtnCanDoi" onclick="switchTab('candoi')">⚖️ Cân đối</button>
+    <button class="tab-btn" id="tabBtnSettings" onclick="switchTab('settings')">⚙️ Cài đặt</button>
   </div>
 </div>
 
@@ -343,6 +344,9 @@
       </div>
       <div id="ddlListWrap"></div>
     </div>
+    <div class="row-flex" style="margin:14px 0 30px;">
+      <button class="btn btn-outline" onclick="exportDdlListExcel()">📊 Xuất Excel</button>
+    </div>
   </div>
 
   <!-- CHIA TIỀN -->
@@ -365,6 +369,9 @@
         <div class="field"><label>Ngày chi thực tế</label><input type="date" id="ddlPayDate"></div>
         <div class="field" style="max-width:240px;"><button class="btn btn-primary" style="width:100%;" onclick="confirmDdlPayment()">✅ Xác nhận đã chi mục đã chọn</button></div>
       </div>
+    </div>
+    <div class="row-flex" style="margin:14px 0 30px;">
+      <button class="btn btn-outline" onclick="exportDdlPayListExcel()">📊 Xuất Excel</button>
     </div>
   </div>
 
@@ -390,11 +397,17 @@
       <div id="splitPayTotalsBox" style="margin-bottom:10px;padding:10px 12px;background:#EAF1FB;border-radius:9px;font-weight:700;color:var(--blue-dk);"></div>
       <div id="splitPayListWrap"></div>
     </div>
+    <div class="row-flex" style="margin:14px 0 30px;">
+      <button class="btn btn-outline" onclick="exportSplitPayExcel()">📊 Xuất Excel</button>
+    </div>
   </div>
 
   <!-- TỔNG HỢP THEO ĐẠI LÝ -->
   <div id="ddlSummarySection" class="hidden">
     <div class="card" style="overflow-x:auto;"><div id="ddlSummaryWrap"></div></div>
+    <div class="row-flex" style="margin:14px 0 30px;">
+      <button class="btn btn-outline" onclick="exportDdlSummaryExcel()">📊 Xuất Excel</button>
+    </div>
   </div>
 
   <!-- SỔ CHI TIẾT THEO ĐẠI LÝ -->
@@ -432,9 +445,62 @@
   </div>
 </div>
 
+<div id="settingsTab" class="wrap hidden">
+  <div class="card">
+    <div class="card-title">🔒 Bảo mật — Khoá PIN màn hình</div>
+    <div class="muted" style="font-size:12px;margin-bottom:10px;">Đặt mã PIN 4-6 số để yêu cầu nhập mỗi khi mở app trên bất kỳ thiết bị nào (đồng bộ qua Firebase). Bỏ trống + bấm "Tắt khoá" nếu không muốn khoá nữa.</div>
+    <div id="pinStatusBox" style="margin-bottom:12px;padding:9px 12px;border-radius:9px;font-weight:700;font-size:13px;"></div>
+    <div class="row-flex">
+      <div class="field" style="max-width:200px;"><label>PIN mới (4-6 số)</label><input type="password" id="newPinInput" inputmode="numeric" maxlength="6" placeholder="••••"></div>
+      <div class="field" style="max-width:200px;"><label>Nhập lại PIN</label><input type="password" id="confirmPinInput" inputmode="numeric" maxlength="6" placeholder="••••"></div>
+    </div>
+    <div class="row-flex" style="margin-top:10px;">
+      <button class="btn btn-primary" onclick="setAppPin()">💾 Đặt / Đổi PIN</button>
+      <button class="btn btn-outline" onclick="disableAppPin()">🔓 Tắt khoá PIN</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">💾 Sao lưu / Phục hồi dữ liệu</div>
+    <div class="muted" style="font-size:12px;margin-bottom:10px;">Tải toàn bộ dữ liệu (phiếu, khách hàng, đại lý, chi phí, công nợ đại lý, chia tiền...) về 1 file JSON để cất giữ riêng — phòng khi cần khôi phục lại.</div>
+    <div class="row-flex">
+      <button class="btn btn-primary" onclick="downloadBackupJson()">📥 Tải file sao lưu</button>
+      <button class="btn btn-outline" onclick="document.getElementById('restoreFileInput').click()">📤 Phục hồi từ file</button>
+      <input type="file" id="restoreFileInput" accept="application/json" style="display:none;" onchange="restoreFromBackupFile(event)">
+    </div>
+    <div id="backupInfoBox" class="muted" style="font-size:11.5px;margin-top:10px;"></div>
+  </div>
+</div>
+
+<div id="lockOverlay" style="position:fixed;inset:0;background:var(--paper);z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:24px;">
+  <div style="font-size:40px;">🔒</div>
+  <div style="font-weight:700;font-size:17px;color:var(--ink);">Nhập mã PIN để mở Sổ Thu Chi Tổng</div>
+  <input type="password" id="lockPinInput" inputmode="numeric" maxlength="6" autocomplete="off" style="font-size:24px;letter-spacing:10px;text-align:center;width:200px;padding:12px;border:2px solid var(--line);border-radius:10px;" placeholder="••••" onkeydown="if(event.key==='Enter') tryUnlockApp();">
+  <div id="lockErrorMsg" style="color:var(--rust);font-weight:700;font-size:13px;height:18px;"></div>
+  <button class="btn btn-primary" style="width:200px;" onclick="tryUnlockApp()">Mở khoá</button>
+</div>
+
+<div id="loadingOverlay" style="position:fixed;inset:0;background:var(--paper);z-index:99998;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;">
+  <div class="spinner" style="width:38px;height:38px;border:4px solid #DCE3ED;border-top-color:var(--blue);border-radius:50%;animation:spin838 .8s linear infinite;"></div>
+  <div style="font-weight:700;font-size:14px;color:var(--muted);">Đang tải dữ liệu…</div>
+</div>
+<style>@keyframes spin838{to{transform:rotate(360deg);}}</style>
+
 
 <div id="printArea" style="display:none;"></div>
 <div id="searchSuggestBox" class="float-box hidden"></div>
+
+<script>
+// Quyết định khoá màn hình NGAY LẬP TỨC (chỉ dựa vào bộ nhớ máy, không chờ Firebase/thư viện nào tải xong)
+(function(){
+  try{
+    var pin = localStorage.getItem('sotong-app-pin');
+    var overlay = document.getElementById('lockOverlay');
+    if(!pin){ overlay.style.display = 'none'; }
+    else { var input = document.getElementById('lockPinInput'); if(input) setTimeout(function(){ input.focus(); }, 60); }
+  }catch(err){ /* nếu trình duyệt chặn localStorage thì thôi, không khoá */ }
+})();
+</script>
 
 <script>
 // ===== CLOUD CONFIG (Firebase) =====
@@ -454,6 +520,7 @@ const FEETYPES_KEY = "sotong-feetypes-v1";
 const DEALER_SALES_KEY = "sotong-dealer-sales-v1";
 const DEALER_OPENING_KEY = "sotong-dealer-opening-v1";
 const SPLIT_PAY_KEY = "sotong-split-pay-v1";
+const PIN_LOCAL_KEY = "sotong-app-pin";
 const DEFAULT_DEALER_ROWS = 10;
 const DEFAULT_FEE_ROWS = 5;
 const DEFAULT_DEDUCT_ROWS = 5;
@@ -664,6 +731,7 @@ let feeTypes = loadJSON(FEETYPES_KEY, []);
 let dealerSales = loadJSON(DEALER_SALES_KEY, []);
 let dealerOpeningBalances = loadJSON(DEALER_OPENING_KEY, {});
 let splitPayments = loadJSON(SPLIT_PAY_KEY, []);
+let appPin = localStorage.getItem(PIN_LOCAL_KEY) || '';
 let currentSheetId = null;
 let dealerRows = [];
 let feeRows = [];
@@ -715,7 +783,7 @@ const COLLECTION_SETTERS = {
 const COLLECTION_LOCALKEYS = {
   sheets: SHEETS_KEY, dealers: DEALERS_KEY, customers: CUSTOMERS_KEY, feeTypes: FEETYPES_KEY, dealerSales: DEALER_SALES_KEY, splitPayments: SPLIT_PAY_KEY,
 };
-let lastSyncedCloud = { sheets:[], dealers:[], customers:[], feeTypes:[], dealerSales:[], splitPayments:[], dealerOpeningBalances:null };
+let lastSyncedCloud = { sheets:[], dealers:[], customers:[], feeTypes:[], dealerSales:[], splitPayments:[], dealerOpeningBalances:null, appPin:'' };
 let fsDb = null;
 let fsReady = false;
 let cloudSyncTimer = null;
@@ -739,7 +807,7 @@ function renderEverythingCloud(){
 }
 
 async function cloudInit(){
-  if(!window.firebaseConfig){ updateCloudStatus("off"); return; }
+  if(!window.firebaseConfig){ updateCloudStatus("off"); ensureNcoPseudoCustomers(); hideLoadingOverlay(); return; }
   updateCloudStatus("connecting");
   try{
     firebase.initializeApp(window.firebaseConfig);
@@ -767,15 +835,29 @@ async function cloudInit(){
       localStorage.setItem(DEALER_OPENING_KEY, JSON.stringify(dealerOpeningBalances));
       renderEverythingCloud();
     }
+    if(settingsDoc.exists){
+      const sd = settingsDoc.data();
+      if(sd.appPin!==undefined && sd.appPin!==appPin){
+        appPin = sd.appPin;
+        if(appPin) localStorage.setItem(PIN_LOCAL_KEY, appPin); else localStorage.removeItem(PIN_LOCAL_KEY);
+        updatePinStatusBox();
+      }
+    }
     lastSyncedCloud = {
       sheets: deepCopy(sheets), dealers: deepCopy(dealers), customers: deepCopy(customers),
       feeTypes: deepCopy(feeTypes), dealerSales: deepCopy(dealerSales), splitPayments: deepCopy(splitPayments),
-      dealerOpeningBalances: deepCopy(dealerOpeningBalances),
+      dealerOpeningBalances: deepCopy(dealerOpeningBalances), appPin: appPin,
     };
     fsReady = true;
+    await ensureNcoPseudoCustomers();
     updateCloudStatus("synced");
     attachRealtimeListeners();
   }catch(e){ console.error("Lỗi kết nối Firebase", e); updateCloudStatus("error"); }
+  hideLoadingOverlay();
+}
+function hideLoadingOverlay(){
+  const el = document.getElementById('loadingOverlay');
+  if(el) el.style.display = 'none';
 }
 
 function attachRealtimeListeners(){
@@ -799,6 +881,12 @@ function attachRealtimeListeners(){
         lastSyncedCloud.dealerOpeningBalances = deepCopy(dealerOpeningBalances);
         localStorage.setItem(DEALER_OPENING_KEY, JSON.stringify(dealerOpeningBalances));
         renderEverythingCloud();
+      }
+      if(sd.appPin!==undefined && sd.appPin!==appPin){
+        appPin = sd.appPin;
+        lastSyncedCloud.appPin = appPin;
+        if(appPin) localStorage.setItem(PIN_LOCAL_KEY, appPin); else localStorage.removeItem(PIN_LOCAL_KEY);
+        updatePinStatusBox();
       }
     }
   });
@@ -825,7 +913,7 @@ async function syncNowCloud(){
       });
       prevMap.forEach((item,id)=>{ if(!currentMap.has(id)) allWrites.push({ col:name, id, op:'delete' }); });
     });
-    const settingsChanged = JSON.stringify(lastSyncedCloud.dealerOpeningBalances)!==JSON.stringify(dealerOpeningBalances);
+    const settingsChanged = JSON.stringify(lastSyncedCloud.dealerOpeningBalances)!==JSON.stringify(dealerOpeningBalances) || lastSyncedCloud.appPin!==appPin;
 
     for(let i=0; i<allWrites.length; i+=400){
       const batch = fsDb.batch();
@@ -836,12 +924,12 @@ async function syncNowCloud(){
       await batch.commit();
     }
     if(settingsChanged){
-      await fsDb.collection("settings").doc("app").set({ dealerOpeningBalances });
+      await fsDb.collection("settings").doc("app").set({ dealerOpeningBalances, appPin }, { merge:true });
     }
     lastSyncedCloud = {
       sheets: deepCopy(sheets), dealers: deepCopy(dealers), customers: deepCopy(customers),
       feeTypes: deepCopy(feeTypes), dealerSales: deepCopy(dealerSales), splitPayments: deepCopy(splitPayments),
-      dealerOpeningBalances: deepCopy(dealerOpeningBalances),
+      dealerOpeningBalances: deepCopy(dealerOpeningBalances), appPin: appPin,
     };
     updateCloudStatus("synced");
   }catch(e){ console.error("Lỗi đồng bộ Firebase", e); updateCloudStatus("error"); }
@@ -855,12 +943,14 @@ function switchTab(tab){
   document.getElementById('debtkhTab').classList.toggle('hidden', tab!=='debtkh');
   document.getElementById('debtdlTab').classList.toggle('hidden', tab!=='debtdl');
   document.getElementById('candoiTab').classList.toggle('hidden', tab!=='candoi');
+  document.getElementById('settingsTab').classList.toggle('hidden', tab!=='settings');
   document.getElementById('tabBtnSheet').classList.toggle('active', tab==='sheet');
   document.getElementById('tabBtnHistory').classList.toggle('active', tab==='history');
   document.getElementById('tabBtnCustomers').classList.toggle('active', tab==='customers');
   document.getElementById('tabBtnDebtKH').classList.toggle('active', tab==='debtkh');
   document.getElementById('tabBtnDebtDL').classList.toggle('active', tab==='debtdl');
   document.getElementById('tabBtnCanDoi').classList.toggle('active', tab==='candoi');
+  document.getElementById('tabBtnSettings').classList.toggle('active', tab==='settings');
   if(tab==='history'){
     if(!document.getElementById('historyFrom').value && !document.getElementById('historyTo').value){
       document.getElementById('historyFrom').value = yesterdayKey();
@@ -872,8 +962,95 @@ function switchTab(tab){
   if(tab==='debtkh') { populateDebtKhCustomerSelect(); renderDebtKhTable(); }
   if(tab==='debtdl') { setDdlSection('entry'); }
   if(tab==='candoi') { renderCanDoi(); }
+  if(tab==='settings') { updatePinStatusBox(); }
   updateStickyOffsets();
 }
+// ===== KHOÁ PIN MÀN HÌNH =====
+function updatePinStatusBox(){
+  const box = document.getElementById('pinStatusBox');
+  if(!box) return;
+  if(appPin){
+    box.textContent = '🔒 Đang bật khoá PIN — mọi thiết bị mở app đều phải nhập PIN';
+    box.style.background = '#E5F2EB'; box.style.color = 'var(--moss)';
+  }else{
+    box.textContent = '🔓 Chưa bật khoá PIN — ai có link cũng mở được app';
+    box.style.background = '#FBEAE6'; box.style.color = 'var(--rust)';
+  }
+}
+function setAppPin(){
+  const p1 = document.getElementById('newPinInput').value.trim();
+  const p2 = document.getElementById('confirmPinInput').value.trim();
+  if(!/^\d{4,6}$/.test(p1)){ alert('PIN phải là 4-6 chữ số'); return; }
+  if(p1!==p2){ alert('Hai lần nhập PIN không khớp nhau'); return; }
+  appPin = p1;
+  localStorage.setItem(PIN_LOCAL_KEY, appPin);
+  document.getElementById('newPinInput').value = '';
+  document.getElementById('confirmPinInput').value = '';
+  updatePinStatusBox();
+  saveAll();
+  alert('Đã đặt mã PIN. Từ giờ mở app trên bất kỳ thiết bị nào cũng cần nhập PIN này.');
+}
+function disableAppPin(){
+  if(!appPin){ alert('Hiện đang chưa bật khoá PIN'); return; }
+  if(!confirm('Tắt khoá PIN? Ai có link cũng sẽ mở được app không cần mật khẩu.')) return;
+  appPin = '';
+  localStorage.removeItem(PIN_LOCAL_KEY);
+  updatePinStatusBox();
+  saveAll();
+  alert('Đã tắt khoá PIN.');
+}
+function tryUnlockApp(){
+  const entered = document.getElementById('lockPinInput').value.trim();
+  const stored = localStorage.getItem(PIN_LOCAL_KEY) || '';
+  if(entered && entered===stored){
+    document.getElementById('lockOverlay').style.display = 'none';
+  }else{
+    document.getElementById('lockErrorMsg').textContent = 'Sai mã PIN, thử lại';
+    document.getElementById('lockPinInput').value = '';
+    document.getElementById('lockPinInput').focus();
+  }
+}
+
+// ===== SAO LƯU / PHỤC HỒI DỮ LIỆU =====
+function downloadBackupJson(){
+  const backup = {
+    exportedAt: new Date().toISOString(),
+    app: 'So Thu Chi Tong - 4 Cong Ty',
+    sheets, dealers, customers, feeTypes, dealerSales, splitPayments, dealerOpeningBalances,
+  };
+  const blob = new Blob([JSON.stringify(backup, null, 2)], { type:'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `sao-luu-so-thu-chi-${todayKey()}.json`;
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+  document.getElementById('backupInfoBox').textContent = `Đã tải file lúc ${new Date().toLocaleString('vi-VN')} — gồm ${sheets.length} phiếu, ${dealers.length} đại lý, ${customers.length} khách hàng, ${feeTypes.length} chi phí, ${dealerSales.length} công nợ ĐL, ${splitPayments.length} khoản chia tiền.`;
+}
+function restoreFromBackupFile(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(evt){
+    let data;
+    try{ data = JSON.parse(evt.target.result); }
+    catch(err){ alert('File không đúng định dạng JSON sao lưu.'); return; }
+    if(!data.sheets && !data.dealers && !data.customers){ alert('File này không phải file sao lưu hợp lệ của app.'); return; }
+    if(!confirm(`Phục hồi sẽ THAY THẾ toàn bộ dữ liệu hiện tại bằng dữ liệu trong file (xuất lúc ${data.exportedAt ? new Date(data.exportedAt).toLocaleString('vi-VN') : 'không rõ'}). Chắc chắn tiếp tục?`)) { e.target.value=''; return; }
+    sheets = data.sheets || [];
+    dealers = data.dealers || [];
+    customers = data.customers || [];
+    feeTypes = data.feeTypes || [];
+    dealerSales = data.dealerSales || [];
+    splitPayments = data.splitPayments || [];
+    dealerOpeningBalances = data.dealerOpeningBalances || {};
+    saveAll();
+    renderEverythingCloud();
+    e.target.value = '';
+    alert('Đã phục hồi dữ liệu thành công.');
+  };
+  reader.readAsText(file);
+}
+
 function setCustSection(s){
   document.getElementById('dealerSection').classList.toggle('hidden', s!=='dealer');
   document.getElementById('custSection').classList.toggle('hidden', s!=='cust');
@@ -986,9 +1163,29 @@ function buildSelectOptions(list, currentValue, placeholder, hideCode){
   }
   return html;
 }
+const NCO_CUSTOMER_NAMES = ['🧊 Nguyên con', '🧊 Oxy'];
+function isNcoPseudoCustomer(name){ return NCO_CUSTOMER_NAMES.includes(name); }
+async function ensureNcoPseudoCustomers(){
+  let changed = false;
+  for(const name of NCO_CUSTOMER_NAMES){
+    if(!customers.some(c=>c.name===name)){
+      const rec = { id: uid(), code: nextCustomerCode(), name };
+      customers.push(rec);
+      changed = true;
+      if(fsDb){
+        try{ await fsDb.collection('customers').doc(String(rec.id)).set(rec); }
+        catch(err){ console.error('Lỗi tạo khách hàng đặc biệt NC/Oxy', err); }
+      }
+    }
+  }
+  if(changed){
+    localStorage.setItem(CUSTOMERS_KEY, JSON.stringify(customers));
+    lastSyncedCloud.customers = deepCopy(customers);
+  }
+}
 function populateSheetTitleSelect(currentValue){
   const el = document.getElementById('sheetTitle');
-  if(el) el.innerHTML = buildSelectOptions(customers, currentValue||'', '-- Chọn khách hàng --');
+  if(el) el.innerHTML = buildSelectOptions(customers.filter(c=>!isNcoPseudoCustomer(c.name)), currentValue||'', '-- Chọn khách hàng --');
 }
 function updateAllSuggestions(){
   populateSheetTitleSelect(document.getElementById('sheetTitle') ? document.getElementById('sheetTitle').value : '');
@@ -1075,8 +1272,9 @@ function populateDebtKhCustomerSelect(){
   const el = document.getElementById('debtkhCustomer');
   if(!el) return;
   const current = el.value;
-  el.innerHTML = customers.length
-    ? customers.map(c=>`<option value="${escapeHtml(c.name)}">${escapeHtml(c.code)} - ${escapeHtml(c.name)}</option>`).join('')
+  const realCustomers = customers.filter(c=>!isNcoPseudoCustomer(c.name));
+  el.innerHTML = realCustomers.length
+    ? realCustomers.map(c=>`<option value="${escapeHtml(c.name)}">${escapeHtml(c.code)} - ${escapeHtml(c.name)}</option>`).join('')
     : `<option value="">-- Chưa có khách hàng --</option>`;
   if(current) el.value = current;
 }
@@ -1162,10 +1360,11 @@ function renderDebtKhTable(){
 }
 function renderDebtKhAllTable(){
   const wrap = document.getElementById('debtkhTableWrap');
-  if(customers.length===0){ wrap.innerHTML = `<div class="empty-state">Chưa có khách hàng nào</div>`; return; }
+  const realCustomers = customers.filter(c=>!isNcoPseudoCustomer(c.name));
+  if(realCustomers.length===0){ wrap.innerHTML = `<div class="empty-state">Chưa có khách hàng nào</div>`; return; }
   const from = document.getElementById('debtkhFrom')?.value;
   const to = document.getElementById('debtkhTo')?.value;
-  const summary = customers.map(c=>{
+  const summary = realCustomers.map(c=>{
     const fullLedger = buildCustomerLedger(c.name);
     const dauKy = getCustomerOpeningBalance(c.name, from);
     const filteredRows = getFilteredDebtKhRows(c.name);
@@ -1305,8 +1504,9 @@ function shareDebtKhImage(){
       </div>`;
     shareHtmlAsImage(html, `cong-no-${customerName}-${todayKey()}.png`, `Công nợ ${customerName}`);
   }else{
-    if(customers.length===0){ alert("Chưa có khách hàng nào"); return; }
-    const summary = customers.map(c=>{
+    const realCustomers = customers.filter(c=>!isNcoPseudoCustomer(c.name));
+    if(realCustomers.length===0){ alert("Chưa có khách hàng nào"); return; }
+    const summary = realCustomers.map(c=>{
       const fullLedger = buildCustomerLedger(c.name);
       const dauKy = getCustomerOpeningBalance(c.name, from);
       const filteredRows = getFilteredDebtKhRows(c.name);
@@ -2562,6 +2762,79 @@ function renderDdlLedger(){
     </table>
   `;
 }
+function exportDdlListExcel(){
+  const fDealer = document.getElementById('ddlFilterDealer')?.value;
+  const fCust = document.getElementById('ddlFilterCustomer')?.value;
+  const fFrom = document.getElementById('ddlListFrom')?.value;
+  const fTo = document.getElementById('ddlListTo')?.value;
+  let list = dealerSales.filter(x=> (!fDealer||x.dealer===fDealer) && (!fCust||x.customer===fCust) && (!fFrom||x.date>=fFrom) && (!fTo||x.date<=fTo));
+  list = list.slice().sort((a,b)=> a.date.localeCompare(b.date));
+  if(list.length===0){ alert("Không có dữ liệu để xuất"); return; }
+  const total = list.reduce((s,x)=>s+x.amount,0);
+  const aoa = [
+    ["DANH SÁCH CÔNG NỢ ĐẠI LÝ"],
+    [],
+    ["STT","NGÀY","ĐẠI LÝ","KHÁCH HÀNG","TIỀN NL","TRẠNG THÁI","GHI CHÚ"],
+  ];
+  list.forEach((x,i)=> aoa.push([i+1, formatDateVN(x.date), x.dealer, x.customer, x.amount, x.paid?'Đã chi':'Chưa chi', x.note||'']));
+  aoa.push(["", "", "", "TỔNG", total, "", ""]);
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  ws['!cols'] = [{wch:6},{wch:12},{wch:20},{wch:20},{wch:16},{wch:12},{wch:24}];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Danh sach");
+  XLSX.writeFile(wb, `danh-sach-cong-no-dl-${todayKey()}.xlsx`);
+}
+function exportDdlPayListExcel(){
+  const customer = document.getElementById('ddlPayCustomer')?.value;
+  const dealerFilter = document.getElementById('ddlPayDealer')?.value;
+  const list = dealerSales.filter(x=> (!customer||x.customer===customer) && (!dealerFilter || x.dealer===dealerFilter) && (ddlPayView==='paid' ? x.paid : !x.paid));
+  if(list.length===0){ alert("Không có dữ liệu để xuất"); return; }
+  const total = list.reduce((s,x)=>s+x.amount,0);
+  const title = ddlPayView==='paid' ? "DANH SÁCH ĐÃ CHI ĐẠI LÝ" : "DANH SÁCH CHƯA CHI ĐẠI LÝ";
+  const aoa = [ [title], [], ["STT","NGÀY NL","ĐẠI LÝ","KHÁCH HÀNG","SỐ TIỀN","NGÀY CHI"] ];
+  list.forEach((x,i)=> aoa.push([i+1, formatDateVN(x.date), x.dealer, x.customer, x.amount, x.paidDate?formatDateVN(x.paidDate):'']));
+  aoa.push(["", "", "", "TỔNG", total, ""]);
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  ws['!cols'] = [{wch:6},{wch:12},{wch:20},{wch:20},{wch:16},{wch:12}];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Tra tien DL");
+  XLSX.writeFile(wb, `tra-tien-dai-ly-${todayKey()}.xlsx`);
+}
+function exportDdlSummaryExcel(){
+  if(dealers.length===0){ alert("Chưa có đại lý nào"); return; }
+  const rows = dealers.map(d=>{
+    const list = dealerSales.filter(x=>x.dealer===d.name);
+    const opening = dealerOpeningBalances[d.name] || 0;
+    const tongBan = list.reduce((s,x)=>s+x.amount,0) + opening;
+    const daChi = list.filter(x=>x.paid).reduce((s,x)=>s+x.amount,0);
+    return { name: d.name, tongBan, daChi, conNo: tongBan-daChi, count: list.length + (opening?1:0) };
+  }).filter(x=>x.count>0);
+  if(rows.length===0){ alert("Chưa có giao dịch nào"); return; }
+  const grandTong = rows.reduce((s,r)=>s+r.tongBan,0);
+  const grandChi = rows.reduce((s,r)=>s+r.daChi,0);
+  const grandConNo = rows.reduce((s,r)=>s+r.conNo,0);
+  const aoa = [ ["TỔNG HỢP THEO ĐẠI LÝ"], [], ["STT","ĐẠI LÝ","TỔNG BÁN","ĐÃ CHI","CÒN NỢ"] ];
+  rows.forEach((r,i)=> aoa.push([i+1, r.name, r.tongBan, r.daChi, r.conNo]));
+  aoa.push(["", "TỔNG TẤT CẢ ĐẠI LÝ", grandTong, grandChi, grandConNo]);
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  ws['!cols'] = [{wch:6},{wch:22},{wch:16},{wch:16},{wch:16}];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Tong hop DL");
+  XLSX.writeFile(wb, `tong-hop-dai-ly-${todayKey()}.xlsx`);
+}
+function exportSplitPayExcel(){
+  if(splitPayments.length===0){ alert("Chưa có khoản chi nào để xuất"); return; }
+  const list = [...splitPayments].sort((a,b)=> (b.createdAt||0)-(a.createdAt||0));
+  const total = list.reduce((s,x)=>s+x.amount,0);
+  const aoa = [ ["CHIA TIỀN - CHIA TIỀN"], [], ["STT","MỤC ĐÍCH CHI TIỀN","SỐ TIỀN","GHI CHÚ"] ];
+  list.forEach((x,i)=> aoa.push([i+1, x.purpose, x.amount, x.note||'']));
+  aoa.push(["", "TỔNG", total, ""]);
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  ws['!cols'] = [{wch:6},{wch:26},{wch:16},{wch:24}];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Chia tien");
+  XLSX.writeFile(wb, `chia-tien-${todayKey()}.xlsx`);
+}
 function exportDdlLedgerExcel(){
   const dealer = document.getElementById('ddlLedgerDealer')?.value;
   if(!dealer){ alert("Chọn đại lý trước"); return; }
@@ -2607,7 +2880,7 @@ function printDdlLedger(){
 
 // ===== CÂN ĐỐI: NỢ ĐẠI LÝ vs NỢ CÔNG TY, theo từng khách hàng =====
 function buildCanDoiRows(){
-  return customers.map(c=>{
+  return customers.filter(c=>!isNcoPseudoCustomer(c.name)).map(c=>{
     const noDaiLy = dealerSales.filter(x=> x.customer===c.name && !x.paid).reduce((s,x)=>s+x.amount,0);
     const khLedger = buildCustomerLedger(c.name);
     const noCongTy = khLedger.length ? khLedger[khLedger.length-1].luyKe : 0;
@@ -2877,7 +3150,11 @@ newSheet();
 updateAllSuggestions();
 initDdlEntryRows();
 document.getElementById('ddlPayDate').value = todayKey();
-cloudInit();
+setTimeout(hideLoadingOverlay, 8000);
+// Thư viện Firebase (tải kiểu defer, chạy nền) có thể chưa xong ngay lúc dòng này chạy tới —
+// đợi sự kiện 'load' (báo hiệu mọi script nền đã tải & chạy xong) rồi mới kết nối, tránh lỗi "Lỗi đồng bộ".
+if(document.readyState==='complete'){ cloudInit(); }
+else{ window.addEventListener('load', cloudInit); }
 </script>
 </body>
 </html>
