@@ -90,7 +90,7 @@
   <div class="wrap">
     <div class="title">📒 Sổ Thu Chi Tổng — 4 Công Ty</div>
     <div class="save-status" id="cloudStatus" style="color:#93A5C4;"></div>
-    <div class="save-status" style="color:#7C93B8;opacity:.75;">Phiên bản: V3.8.2</div>
+    <div class="save-status" style="color:#7C93B8;opacity:.75;">Phiên bản: V3.8.3</div>
   </div>
 </div>
 
@@ -315,7 +315,10 @@
   <!-- NHẬP LIỆU -->
   <div id="ddlEntrySection">
     <div class="card" style="overflow-x:auto;">
-      <div class="card-title">Nhập giao dịch — Ngày / Đại lý / Khách hàng / Tiền NL</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:4px;">
+        <div class="card-title" style="margin-bottom:0;">Nhập giao dịch — Ngày / Đại lý / Khách hàng / Tiền NL</div>
+        <div id="ddlEntryTotalBox" style="padding:7px 12px;background:#EAF1FB;border-radius:8px;font-weight:700;color:var(--blue-dk);font-size:13px;white-space:nowrap;">Tổng: 0</div>
+      </div>
       <table class="grid" id="ddlEntryTable">
         <thead><tr><th style="width:88px;">Ngày</th><th style="width:230px;min-width:200px;">Đại lý</th><th style="width:180px;">Khách hàng</th><th style="width:150px;">Tiền NL</th><th>Ghi chú</th><th style="width:30px;"></th></tr></thead>
         <tbody id="ddlEntryTbody"></tbody>
@@ -2130,7 +2133,7 @@ function printSheet(){
 }
 
 // ===== CÔNG NỢ ĐẠI LÝ (nhập tay, tách theo từng khách hàng) =====
-function emptyDdlEntryRow(){ return { id: uid(), date: todayKey(), dealer:'', customer:'', amount:'', note:'' }; }
+function emptyDdlEntryRow(){ return { id: uid(), date: yesterdayKey(), dealer:'', customer:'', amount:'', note:'' }; }
 function initDdlEntryRows(){ ddlEntryRows = Array.from({length:10}, emptyDdlEntryRow); }
 
 function setDdlSection(s){
@@ -2183,12 +2186,20 @@ function renderDdlEntryTable(){
       if(!row) return;
       if(isNum){ handleFormattedNumberInput(e, ddlEntryRows); }
       else{ row[e.target.dataset.field] = e.target.value; }
+      updateDdlEntryTotal();
     };
     el.oninput = handler;
     el.onchange = handler;
     if(isNum) el.onblur = forceReformatNumberField;
   });
   attachGridArrowNav('ddlEntryTbody', ['amount','note']);
+  updateDdlEntryTotal();
+}
+function updateDdlEntryTotal(){
+  const box = document.getElementById('ddlEntryTotalBox');
+  if(!box) return;
+  const total = ddlEntryRows.reduce((s,r)=> s + (Number(rawNumberString(r.amount))||0), 0);
+  box.textContent = `Tổng: ${formatNumber(total)} đ`;
 }
 function saveDdlEntries(){
   const valid = ddlEntryRows.filter(r=> r.dealer && r.customer && Number(r.amount)>0);
