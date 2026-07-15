@@ -90,7 +90,7 @@
   <div class="wrap">
     <div class="title">📒 Sổ Thu Chi Tổng — 4 Công Ty</div>
     <div class="save-status" id="cloudStatus" style="color:#93A5C4;"></div>
-    <div class="save-status" style="color:#7C93B8;opacity:.75;">Phiên bản: V3.8.1</div>
+    <div class="save-status" style="color:#7C93B8;opacity:.75;">Phiên bản: V3.8.2</div>
   </div>
 </div>
 
@@ -2147,7 +2147,14 @@ function setDdlSection(s){
   document.getElementById('ddlBtnSummary').classList.toggle('active', s==='summary');
   document.getElementById('ddlBtnLedger').classList.toggle('active', s==='ledger');
   if(s==='entry'){ if(ddlEntryRows.length===0) initDdlEntryRows(); renderDdlEntryTable(); }
-  if(s==='list'){ populateDdlFilters(); renderDdlList(); }
+  if(s==='list'){
+    populateDdlFilters();
+    if(!document.getElementById('ddlListFrom').value && !document.getElementById('ddlListTo').value){
+      document.getElementById('ddlListFrom').value = yesterdayKey();
+      document.getElementById('ddlListTo').value = yesterdayKey();
+    }
+    renderDdlList();
+  }
   if(s==='pay'){ populateDdlPayCustomerSelect(); renderDdlPayList(); }
   if(s==='payout'){ if(splitPayRows.length===0) initSplitPayRows(); renderSplitPayTable(); renderSplitPayList(); }
   if(s==='summary'){ renderDdlSummary(); }
@@ -2259,7 +2266,9 @@ function renderDdlList(){
   list = list.slice().sort((a,b)=> a.date.localeCompare(b.date));
   if(list.length===0){ wrap.innerHTML = `<div class="empty-state">Chưa có giao dịch nào</div>`; if(totalBox) totalBox.textContent=''; return; }
   const totalAll = list.reduce((s,x)=>s+x.amount,0);
-  if(totalBox) totalBox.textContent = `Tổng: ${formatNumber(totalAll)} đ (${list.length} giao dịch)`;
+  const totalPaid = list.filter(x=>x.paid).reduce((s,x)=>s+x.amount,0);
+  const totalUnpaid = totalAll - totalPaid;
+  if(totalBox) totalBox.innerHTML = `Tổng: ${formatNumber(totalAll)} đ (${list.length} giao dịch) &nbsp;|&nbsp; <span style="color:var(--moss);">Đã trả: ${formatNumber(totalPaid)} đ</span> &nbsp;|&nbsp; <span style="color:var(--rust);">Chưa trả: ${formatNumber(totalUnpaid)} đ</span>`;
   const body = list.map((x,i)=>{
     if(editingDdlSaleId===x.id){
       return `
