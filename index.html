@@ -47,7 +47,7 @@
   .row-flex > .field{flex:1;min-width:160px;}
   table.grid{width:100%;border-collapse:collapse;font-size:13px;}
   #splitPayTable{table-layout:fixed;min-width:580px;}
-  #splitPaySavedTable{table-layout:fixed;min-width:600px;}
+  #splitPaySavedTable{table-layout:fixed;min-width:640px;}
   #dealerTable{min-width:760px;}
   #ddlEntryTable{min-width:850px;}
   table.grid th{background:var(--ink);color:#fff;padding:7px 8px;text-align:center;font-size:11.5px;white-space:nowrap;}
@@ -90,7 +90,7 @@
   <div class="wrap">
     <div class="title">📒 Sổ Thu Chi Tổng — 4 Công Ty</div>
     <div class="save-status" id="cloudStatus" style="color:#93A5C4;"></div>
-    <div class="save-status" style="color:#7C93B8;opacity:.75;">Phiên bản: V3.8.3</div>
+    <div class="save-status" style="color:#7C93B8;opacity:.75;">Phiên bản: V3.9.5</div>
   </div>
 </div>
 
@@ -183,6 +183,9 @@
       <div class="field"><label>Đến ngày</label><input type="date" id="historyTo" onchange="renderHistory()"></div>
       <div class="field" style="max-width:140px;"><label>&nbsp;</label><button class="btn btn-outline" style="width:100%;" onclick="clearHistoryDateFilter()">Xem tất cả</button></div>
     </div>
+    <label style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted);margin-top:10px;cursor:pointer;">
+      <input type="checkbox" id="historyShowGiaCong" onchange="renderHistory()" style="width:16px;height:16px;"> 🔧 Hiện cả phiếu của khách hàng Gia công (mặc định đang ẩn)
+    </label>
     <div id="historyTotalsBox" style="margin-top:10px;padding:10px 12px;background:#EAF1FB;border-radius:9px;font-weight:700;color:var(--blue-dk);"></div>
   </div>
   <div class="card">
@@ -231,6 +234,9 @@
         <div class="field" style="flex:2;"><label>Tên khách hàng</label><input type="text" id="newCustName" placeholder="Mã tự tạo" onkeydown="if(event.key==='Enter'){event.preventDefault();addCustomer();}"></div>
         <div class="field"><label>SĐT (không bắt buộc)</label><input type="text" id="newCustPhone"></div>
       </div>
+      <label style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted);margin-top:8px;cursor:pointer;">
+        <input type="checkbox" id="newCustGiaCong" style="width:16px;height:16px;"> 🔧 Khách hàng Gia công (ẩn khỏi Lịch sử phiếu, Công nợ KH, Cân đối — vẫn chọn được khi Lập phiếu)
+      </label>
       <button class="btn btn-primary" style="margin-top:10px;" onclick="addCustomer()">➕ Thêm khách hàng</button>
     </div>
     <div class="card">
@@ -340,6 +346,9 @@
         <div class="field"><label>Đến ngày</label><input type="date" id="ddlListTo" onchange="renderDdlList()"></div>
         <div class="field" style="max-width:140px;"><label>&nbsp;</label><button class="btn btn-outline" style="width:100%;" onclick="clearDdlListDateFilter()">Xem tất cả</button></div>
       </div>
+      <label style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted);margin-top:10px;cursor:pointer;">
+        <input type="checkbox" id="ddlListShowNco" onchange="renderDdlList()" style="width:16px;height:16px;"> 🧊 Hiện Nguyên con/Oxy (mặc định đang ẩn)
+      </label>
     </div>
     <div class="card" style="overflow-x:auto;">
       <div style="display:flex;justify-content:flex-end;margin-bottom:10px;">
@@ -397,7 +406,12 @@
 
     <div class="card" style="overflow-x:auto;margin-top:22px;">
       <div class="card-title">Danh sách đã lưu</div>
-      <div id="splitPayTotalsBox" style="margin-bottom:10px;padding:10px 12px;background:#EAF1FB;border-radius:9px;font-weight:700;color:var(--blue-dk);"></div>
+      <div class="row-flex">
+        <div class="field"><label>Từ ngày</label><input type="date" id="splitPayListFrom" onchange="renderSplitPayList()"></div>
+        <div class="field"><label>Đến ngày</label><input type="date" id="splitPayListTo" onchange="renderSplitPayList()"></div>
+        <div class="field" style="max-width:140px;"><label>&nbsp;</label><button class="btn btn-outline" style="width:100%;" onclick="clearSplitPayListDateFilter()">Xem tất cả</button></div>
+      </div>
+      <div id="splitPayTotalsBox" style="margin:10px 0;padding:10px 12px;background:#EAF1FB;border-radius:9px;font-weight:700;color:var(--blue-dk);"></div>
       <div id="splitPayListWrap"></div>
     </div>
     <div class="row-flex" style="margin:14px 0 30px;">
@@ -441,6 +455,12 @@
     <div class="muted" style="font-size:12.5px;">
       So sánh cho từng khách hàng: <b>Nợ Đại lý</b> (số tiền công ty còn phải trả đại lý, tính theo các khoản chưa chi trong "Công nợ Đại lý") và <b>Nợ Công ty</b> (số tiền khách hàng còn nợ công ty, lấy từ "Công nợ KH"). Số Chênh lệch dương = khách hàng nợ công ty nhiều hơn phần công ty còn nợ đại lý; âm = ngược lại.
     </div>
+    <label style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted);margin-top:10px;cursor:pointer;">
+      <input type="checkbox" id="candoiShowGiaCong" onchange="renderCanDoi()" style="width:16px;height:16px;"> 🔧 Hiện cả khách hàng Gia công (mặc định đang ẩn)
+    </label>
+    <label style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted);margin-top:8px;cursor:pointer;">
+      <input type="checkbox" id="candoiShowNco" onchange="renderCanDoi()" style="width:16px;height:16px;"> 🧊 Hiện Nguyên con/Oxy (mặc định đang ẩn)
+    </label>
   </div>
   <div class="card" style="overflow-x:auto;"><div id="canDoiWrap"></div></div>
   <div class="row-flex" style="margin:14px 0 30px;">
@@ -1168,6 +1188,11 @@ function buildSelectOptions(list, currentValue, placeholder, hideCode){
 }
 const NCO_CUSTOMER_NAMES = ['🧊 Nguyên con', '🧊 Oxy'];
 function isNcoPseudoCustomer(name){ return NCO_CUSTOMER_NAMES.includes(name); }
+function isGiaCongCustomer(name){
+  const c = customers.find(x=>x.name===name);
+  return !!(c && c.isGiaCong);
+}
+function isHiddenFromKhViews(name){ return isNcoPseudoCustomer(name) || isGiaCongCustomer(name); }
 async function ensureNcoPseudoCustomers(){
   let changed = false;
   for(const name of NCO_CUSTOMER_NAMES){
@@ -1229,6 +1254,7 @@ function renderFeeTable(){
     el.onchange = handler;
     if(isNum) el.onblur = forceReformatNumberField;
   });
+  attachGridArrowNav('feeTbody', ['name','amount']);
   recalcSheet();
 }
 
@@ -1259,6 +1285,7 @@ function renderDeductTable(){
     el.onchange = handler;
     if(isNum) el.onblur = forceReformatNumberField;
   });
+  attachGridArrowNav('deductTbody', ['name','amount']);
   recalcSheet();
 }
 
@@ -1275,7 +1302,7 @@ function populateDebtKhCustomerSelect(){
   const el = document.getElementById('debtkhCustomer');
   if(!el) return;
   const current = el.value;
-  const realCustomers = customers.filter(c=>!isNcoPseudoCustomer(c.name));
+  const realCustomers = customers.filter(c=>!isHiddenFromKhViews(c.name));
   el.innerHTML = realCustomers.length
     ? realCustomers.map(c=>`<option value="${escapeHtml(c.name)}">${escapeHtml(c.code)} - ${escapeHtml(c.name)}</option>`).join('')
     : `<option value="">-- Chưa có khách hàng --</option>`;
@@ -1363,7 +1390,7 @@ function renderDebtKhTable(){
 }
 function renderDebtKhAllTable(){
   const wrap = document.getElementById('debtkhTableWrap');
-  const realCustomers = customers.filter(c=>!isNcoPseudoCustomer(c.name));
+  const realCustomers = customers.filter(c=>!isHiddenFromKhViews(c.name));
   if(realCustomers.length===0){ wrap.innerHTML = `<div class="empty-state">Chưa có khách hàng nào</div>`; return; }
   const from = document.getElementById('debtkhFrom')?.value;
   const to = document.getElementById('debtkhTo')?.value;
@@ -1507,7 +1534,7 @@ function shareDebtKhImage(){
       </div>`;
     shareHtmlAsImage(html, `cong-no-${customerName}-${todayKey()}.png`, `Công nợ ${customerName}`);
   }else{
-    const realCustomers = customers.filter(c=>!isNcoPseudoCustomer(c.name));
+    const realCustomers = customers.filter(c=>!isHiddenFromKhViews(c.name));
     if(realCustomers.length===0){ alert("Chưa có khách hàng nào"); return; }
     const summary = realCustomers.map(c=>{
       const fullLedger = buildCustomerLedger(c.name);
@@ -1713,7 +1740,8 @@ function renderHistory(){
   if(sheets.length===0){ wrap.innerHTML = `<div class="empty-state">Chưa có phiếu nào được lưu</div>`; if(totalsBox) totalsBox.textContent = ''; return; }
   const from = document.getElementById('historyFrom')?.value;
   const to = document.getElementById('historyTo')?.value;
-  const filtered = sheets.filter(s=> (!from || s.date>=from) && (!to || s.date<=to));
+  const showGiaCong = document.getElementById('historyShowGiaCong')?.checked;
+  const filtered = sheets.filter(s=> (!from || s.date>=from) && (!to || s.date<=to) && (showGiaCong || !isGiaCongCustomer(s.title)));
   if(filtered.length===0){ wrap.innerHTML = `<div class="empty-state">Không có phiếu nào trong khoảng ngày đã chọn</div>`; if(totalsBox) totalsBox.textContent = ''; return; }
   let grandKg = 0, grandTien = 0;
   const sorted = [...filtered].sort((a,b)=> b.createdAt-a.createdAt);
@@ -1728,7 +1756,7 @@ function renderHistory(){
       <div class="history-item">
         <div>
           <span class="badge">${formatDateVN(s.date)}</span>
-          <strong>${escapeHtml(s.title||'(chưa đặt tên)')}</strong>
+          <strong>${escapeHtml(s.title||'(chưa đặt tên)')}</strong>${isGiaCongCustomer(s.title)?` <span style="background:#FFF6C9;color:#8a6d00;border-radius:6px;padding:2px 7px;font-size:10.5px;font-weight:700;">🔧 Gia công</span>`:''}
           <div class="muted" style="font-size:11.5px;color:var(--muted);">${sumKg.toLocaleString('en-US',{maximumFractionDigits:2})} kg · Còn lại: ${formatNumber(conLai)}</div>
         </div>
         <div style="display:flex;gap:10px;">
@@ -1876,10 +1904,12 @@ function addCustomer(){
   const name = document.getElementById('newCustName').value.trim();
   if(!name){ alert("Nhập tên"); return; }
   const phone = document.getElementById('newCustPhone').value.trim();
-  customers.push({ id: uid(), code: nextCustomerCode(), name, phone });
+  const isGiaCong = document.getElementById('newCustGiaCong').checked;
+  customers.push({ id: uid(), code: nextCustomerCode(), name, phone, isGiaCong });
   saveAll();
   document.getElementById('newCustName').value='';
   document.getElementById('newCustPhone').value='';
+  document.getElementById('newCustGiaCong').checked=false;
   renderCustomers();
   updateAllSuggestions();
 }
@@ -1900,6 +1930,7 @@ function saveEditCustomer(id){
   if(!name) return;
   c.name = name;
   c.phone = document.getElementById('editCustPhone-'+id).value.trim();
+  c.isGiaCong = document.getElementById('editCustGiaCong-'+id).checked;
   editingCustId = null;
   saveAll();
   renderCustomers();
@@ -1916,6 +1947,9 @@ function renderCustomers(){
         <div class="history-item" style="flex-direction:column;align-items:stretch;gap:8px;">
           <input type="text" id="editCustName-${c.id}" value="${escapeHtml(c.name)}" placeholder="Tên">
           <input type="text" id="editCustPhone-${c.id}" value="${escapeHtml(c.phone||'')}" placeholder="SĐT">
+          <label style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted);cursor:pointer;">
+            <input type="checkbox" id="editCustGiaCong-${c.id}" ${c.isGiaCong?'checked':''} style="width:16px;height:16px;"> 🔧 Khách hàng Gia công (ẩn khỏi Lịch sử phiếu, Công nợ KH, Cân đối)
+          </label>
           <div class="row-flex">
             <button class="btn btn-primary btn-sm" onclick="saveEditCustomer('${c.id}')">✅ Lưu</button>
             <button class="btn btn-outline btn-sm" onclick="cancelEditCustomer()">✕ Huỷ</button>
@@ -1927,7 +1961,7 @@ function renderCustomers(){
     <div class="history-item">
       <div style="display:flex;align-items:center;gap:10px;">
         <input type="checkbox" ${selectedCustIdsForBulk.has(c.id)?'checked':''} onchange="toggleBulkCust('${c.id}')" style="width:16px;height:16px;">
-        <div><span class="badge">${escapeHtml(c.code)}</span> <strong>${escapeHtml(c.name)}</strong>${c.phone?` · ${escapeHtml(c.phone)}`:''}</div>
+        <div><span class="badge">${escapeHtml(c.code)}</span> <strong>${escapeHtml(c.name)}</strong>${c.phone?` · ${escapeHtml(c.phone)}`:''}${c.isGiaCong?` <span style="background:#FFF6C9;color:#8a6d00;border-radius:6px;padding:2px 7px;font-size:10.5px;font-weight:700;">🔧 Gia công</span>`:''}</div>
       </div>
       <div style="display:flex;gap:10px;">
         <button class="del-row-btn" onclick="editCustomer('${c.id}')">✏️</button>
@@ -2159,7 +2193,15 @@ function setDdlSection(s){
     renderDdlList();
   }
   if(s==='pay'){ populateDdlPayCustomerSelect(); renderDdlPayList(); }
-  if(s==='payout'){ if(splitPayRows.length===0) initSplitPayRows(); renderSplitPayTable(); renderSplitPayList(); }
+  if(s==='payout'){
+    if(splitPayRows.length===0) initSplitPayRows();
+    renderSplitPayTable();
+    if(!document.getElementById('splitPayListFrom').value && !document.getElementById('splitPayListTo').value){
+      document.getElementById('splitPayListFrom').value = todayKey();
+      document.getElementById('splitPayListTo').value = todayKey();
+    }
+    renderSplitPayList();
+  }
   if(s==='summary'){ renderDdlSummary(); }
   if(s==='ledger'){ populateDdlLedgerDealerSelect(); onDdlLedgerDealerChange(); }
 }
@@ -2273,7 +2315,8 @@ function renderDdlList(){
   const fCust = document.getElementById('ddlFilterCustomer')?.value;
   const fFrom = document.getElementById('ddlListFrom')?.value;
   const fTo = document.getElementById('ddlListTo')?.value;
-  let list = dealerSales.filter(x=> (!fDealer||x.dealer===fDealer) && (!fCust||x.customer===fCust) && (!fFrom||x.date>=fFrom) && (!fTo||x.date<=fTo));
+  const showNco = document.getElementById('ddlListShowNco')?.checked;
+  let list = dealerSales.filter(x=> (!fDealer||x.dealer===fDealer) && (!fCust||x.customer===fCust) && (!fFrom||x.date>=fFrom) && (!fTo||x.date<=fTo) && (showNco || !isNcoPseudoCustomer(x.customer) || (fCust && isNcoPseudoCustomer(fCust))));
   list = list.slice().sort((a,b)=> a.date.localeCompare(b.date));
   if(list.length===0){ wrap.innerHTML = `<div class="empty-state">Chưa có giao dịch nào</div>`; if(totalBox) totalBox.textContent=''; return; }
   const totalAll = list.reduce((s,x)=>s+x.amount,0);
@@ -2900,7 +2943,8 @@ function printDdlLedger(){
 
 // ===== CÂN ĐỐI: NỢ ĐẠI LÝ vs NỢ CÔNG TY, theo từng khách hàng =====
 function buildCanDoiRows(){
-  return customers.filter(c=>!isNcoPseudoCustomer(c.name)).map(c=>{
+  const showGiaCong = document.getElementById('candoiShowGiaCong')?.checked;
+  return customers.filter(c=> !isNcoPseudoCustomer(c.name) && (showGiaCong || !isGiaCongCustomer(c.name))).map(c=>{
     const noDaiLy = dealerSales.filter(x=> x.customer===c.name && !x.paid).reduce((s,x)=>s+x.amount,0);
     const khLedger = buildCustomerLedger(c.name);
     const noCongTy = khLedger.length ? khLedger[khLedger.length-1].luyKe : 0;
@@ -2911,26 +2955,41 @@ function buildCanDoiRows(){
 function renderCanDoi(){
   const wrap = document.getElementById('canDoiWrap');
   const rows = buildCanDoiRows();
-  if(rows.length===0){ wrap.innerHTML = `<div class="empty-state">Chưa có dữ liệu để cân đối</div>`; return; }
+  const showNco = document.getElementById('candoiShowNco')?.checked;
+  const ncoTotals = {};
+  NCO_CUSTOMER_NAMES.forEach(name=>{
+    ncoTotals[name] = dealerSales.filter(x=> x.customer===name && !x.paid).reduce((s,x)=>s+x.amount,0);
+  });
+  if(rows.length===0 && !showNco){ wrap.innerHTML = `<div class="empty-state">Chưa có dữ liệu để cân đối</div>`; return; }
   const grandNoDaiLy = rows.reduce((s,r)=>s+r.noDaiLy,0);
   const grandNoCongTy = rows.reduce((s,r)=>s+r.noCongTy,0);
   const grandChenh = rows.reduce((s,r)=>s+r.chenhLech,0);
   const body = rows.map((r,i)=>`
     <tr>
       <td class="readonly">${i+1}</td>
-      <td style="text-align:left;padding:6px 8px;"><span class="badge">${escapeHtml(r.code)}</span> ${escapeHtml(r.name)}</td>
+      <td style="text-align:left;padding:6px 8px;"><span class="badge">${escapeHtml(r.code)}</span> ${escapeHtml(r.name)}${isGiaCongCustomer(r.name)?` <span style="background:#FFF6C9;color:#8a6d00;border-radius:6px;padding:2px 7px;font-size:10.5px;font-weight:700;">🔧 Gia công</span>`:''}</td>
       <td class="readonly" style="color:var(--rust);">${formatNumber(r.noDaiLy)}</td>
       <td class="readonly" style="color:var(--blue-dk);">${formatNumber(r.noCongTy)}</td>
       <td class="readonly" style="font-weight:700;color:${r.chenhLech<0?'var(--rust)':'var(--moss)'};">${r.chenhLech<0?'':'+'}${formatNumber(r.chenhLech)}</td>
     </tr>
   `).join('');
+  const ncoRows = showNco ? NCO_CUSTOMER_NAMES.map(name=>`
+    <tr style="background:#EAF1FB;">
+      <td class="readonly"></td>
+      <td style="text-align:left;padding:6px 8px;font-weight:700;">${escapeHtml(name)} (chưa chi cho đại lý)</td>
+      <td class="readonly" style="color:var(--rust);font-weight:700;">${formatNumber(ncoTotals[name])}</td>
+      <td class="readonly" style="color:var(--muted);">—</td>
+      <td class="readonly" style="color:var(--muted);">—</td>
+    </tr>
+  `).join('') : '';
   wrap.innerHTML = `
     <table class="grid">
       <thead><tr><th style="width:36px;">STT</th><th>KHÁCH HÀNG</th><th style="width:150px;">NỢ ĐẠI LÝ</th><th style="width:150px;">NỢ CÔNG TY</th><th style="width:150px;">CHÊNH LỆCH</th></tr></thead>
-      <tbody>${body}
+      <tbody>${body}${ncoRows}
         <tr class="sum-row"><td colspan="2">TỔNG</td><td style="color:var(--rust);">${formatNumber(grandNoDaiLy)}</td><td style="color:var(--blue-dk);">${formatNumber(grandNoCongTy)}</td><td style="color:${grandChenh<0?'var(--rust)':'var(--moss)'};">${grandChenh<0?'':'+'}${formatNumber(grandChenh)}</td></tr>
       </tbody>
     </table>
+    ${showNco ? `<div class="muted" style="font-size:11px;margin-top:6px;">🧊 Nguyên con/Oxy hiện chỉ mang tính tham khảo thêm (chi phí vật tư, không có khách hàng đối ứng) — không tính vào TỔNG Chênh lệch phía trên.</div>` : ''}
   `;
 }
 function exportCanDoiExcel(){
@@ -3063,12 +3122,21 @@ function deleteSplitPay(id, btn){
   saveAll();
   renderSplitPayList();
 }
+function clearSplitPayListDateFilter(){
+  document.getElementById('splitPayListFrom').value = '';
+  document.getElementById('splitPayListTo').value = '';
+  renderSplitPayList();
+}
 function renderSplitPayList(){
   const wrap = document.getElementById('splitPayListWrap');
   const totalsBox = document.getElementById('splitPayTotalsBox');
   if(!wrap) return;
   if(splitPayments.length===0){ wrap.innerHTML = `<div class="empty-state">Chưa có khoản chi nào được lưu.<br>Điền <b>Mục đích</b> + <b>Số tiền</b> ở bảng "Nhập khoản chi" phía trên rồi bấm "💾 Lưu các khoản chi" — khoản chi sẽ hiện ra ở đây.</div>`; if(totalsBox) totalsBox.textContent=''; return; }
-  const list = [...splitPayments].sort((a,b)=> (b.createdAt||0)-(a.createdAt||0));
+  const fFrom = document.getElementById('splitPayListFrom')?.value;
+  const fTo = document.getElementById('splitPayListTo')?.value;
+  const filtered = splitPayments.filter(x=> (!fFrom||x.date>=fFrom) && (!fTo||x.date<=fTo));
+  if(filtered.length===0){ wrap.innerHTML = `<div class="empty-state">Không có khoản chi nào trong khoảng ngày đã chọn</div>`; if(totalsBox) totalsBox.textContent=''; return; }
+  const list = [...filtered].sort((a,b)=> b.date===a.date ? (b.createdAt||0)-(a.createdAt||0) : b.date.localeCompare(a.date));
   const total = list.reduce((s,x)=>s+x.amount,0);
   if(totalsBox) totalsBox.textContent = `💰 Tổng tiền: ${formatNumber(total)} đ   |   ${list.length} khoản chi`;
   // Tính tổng tiền theo từng đợt lưu (batch) để hiện kèm trong cột Ghi chú
@@ -3080,7 +3148,7 @@ function renderSplitPayList(){
       return `
         <tr>
           <td class="readonly">${i+1}</td>
-          <td colspan="4" style="padding:8px;">
+          <td colspan="5" style="padding:8px;">
             <div class="row-flex">
               <div class="field"><label>Ngày</label><input type="date" id="editSplitDate-${x.id}" value="${x.date||todayKey()}"></div>
               <div class="field"><label>Mục đích</label><input type="text" data-src="feeType" id="editSplitPurpose-${x.id}" value="${escapeHtml(x.purpose)}" placeholder="Gõ để tìm…"></div>
@@ -3102,6 +3170,7 @@ function renderSplitPayList(){
     return `
       <tr>
         <td class="readonly">${i+1}</td>
+        <td class="readonly">${formatDateVN(x.date)}</td>
         <td style="text-align:left;padding:6px 8px;">${escapeHtml(x.purpose)}</td>
         <td class="readonly">${formatNumber(x.amount)}</td>
         <td style="text-align:left;padding:6px 8px;">${noteHtml}</td>
@@ -3114,9 +3183,9 @@ function renderSplitPayList(){
   }).join('');
   wrap.innerHTML = `
     <table class="grid" id="splitPaySavedTable">
-      <thead><tr><th style="width:36px;">STT</th><th style="width:130px;">MỤC ĐÍCH CHI TIỀN</th><th style="width:180px;">SỐ TIỀN</th><th style="width:150px;">GHI CHÚ</th><th style="width:104px;"></th></tr></thead>
+      <thead><tr><th style="width:36px;">STT</th><th style="width:88px;">NGÀY</th><th style="width:120px;">MỤC ĐÍCH CHI TIỀN</th><th style="width:150px;">SỐ TIỀN</th><th style="width:140px;">GHI CHÚ</th><th style="width:104px;"></th></tr></thead>
       <tbody>${body}
-        <tr class="sum-row"><td colspan="2">TỔNG</td><td>${formatNumber(total)}</td><td colspan="2"></td></tr>
+        <tr class="sum-row"><td colspan="3">TỔNG</td><td>${formatNumber(total)}</td><td colspan="2"></td></tr>
       </tbody>
     </table>
   `;
