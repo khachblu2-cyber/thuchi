@@ -90,25 +90,30 @@
   <div class="wrap">
     <div class="title">📒 Sổ Thu Chi Tổng — 4 Công Ty</div>
     <div class="save-status" id="cloudStatus" style="color:#93A5C4;"></div>
-    <div class="save-status" style="color:#7C93B8;opacity:.75;">Phiên bản: V3.9.5</div>
+    <div class="save-status" style="color:#7C93B8;opacity:.75;">Phiên bản: V4.0.0</div>
   </div>
 </div>
 
 <div class="tabs">
   <div class="wrap" style="display:flex;">
-    <button class="tab-btn active" id="tabBtnSheet" onclick="switchTab('sheet')">📝 Lập phiếu</button>
-    <button class="tab-btn" id="tabBtnHistory" onclick="switchTab('history')">🗂 Lịch sử phiếu</button>
-    <button class="tab-btn" id="tabBtnCustomers" onclick="switchTab('customers')">👥 Khách hàng / Đại lý</button>
+    <button class="tab-btn active" id="tabBtnCreate" onclick="switchTab('sheet')">📝 Tạo Phiếu</button>
     <button class="tab-btn" id="tabBtnDebtKH" onclick="switchTab('debtkh')">🧮 Công nợ KH</button>
     <button class="tab-btn" id="tabBtnDebtDL" onclick="switchTab('debtdl')">🚚 Công nợ Đại lý</button>
     <button class="tab-btn" id="tabBtnCanDoi" onclick="switchTab('candoi')">⚖️ Cân đối</button>
     <button class="tab-btn" id="tabBtnSettings" onclick="switchTab('settings')">⚙️ Cài đặt</button>
   </div>
 </div>
+<div class="wrap">
+  <div class="section-tab sticky-below-tabs" id="createSubTabBar" style="margin-top:14px;">
+    <button class="active" id="tabBtnSheet" onclick="switchTab('sheet')">📝 Lập phiếu</button>
+    <button id="tabBtnHistory" onclick="switchTab('history')">🗂 Lịch sử phiếu</button>
+    <button id="tabBtnCustomers" onclick="switchTab('customers')">👥 Khách hàng / Đại lý</button>
+  </div>
+</div>
 
 <!-- ============ TAB: LẬP PHIẾU ============ -->
 <div id="sheetTab" class="wrap">
-  <div class="card sticky-below-tabs">
+  <div class="card sticky-below-tabs-2">
     <div class="card-title">Thông tin phiếu</div>
     <div class="row-flex">
       <div class="field"><label>Ngày</label><input type="date" id="sheetDate"></div>
@@ -176,7 +181,7 @@
 
 <!-- ============ TAB: LỊCH SỬ ============ -->
 <div id="historyTab" class="wrap hidden">
-  <div class="card sticky-below-tabs">
+  <div class="card sticky-below-tabs-2">
     <div class="card-title">Lọc theo ngày</div>
     <div class="row-flex">
       <div class="field"><label>Từ ngày</label><input type="date" id="historyFrom" onchange="renderHistory()"></div>
@@ -196,7 +201,7 @@
 
 <!-- ============ TAB: KHÁCH HÀNG / ĐẠI LÝ / CHI PHÍ ============ -->
 <div id="customersTab" class="wrap hidden">
-  <div class="section-tab sticky-below-tabs">
+  <div class="section-tab sticky-below-tabs-2">
     <button class="active" id="subBtnDealer" onclick="setCustSection('dealer')">🚚 Đại lý</button>
     <button id="subBtnCust" onclick="setCustSection('cust')">🧑‍💼 Khách hàng</button>
     <button id="subBtnFee" onclick="setCustSection('fee')">💸 Chi phí</button>
@@ -313,7 +318,7 @@
     <button class="active" id="ddlBtnEntry" onclick="setDdlSection('entry')">➕ Nhập liệu</button>
     <button id="ddlBtnList" onclick="setDdlSection('list')">📋 Danh sách</button>
     <button id="ddlBtnPay" onclick="setDdlSection('pay')">💰 Trả tiền Đại Lý</button>
-    <button id="ddlBtnPayOut" onclick="setDdlSection('payout')">🔀 Chia tiền - Chia tiền</button>
+    <button id="ddlBtnPayOut" onclick="setDdlSection('payout')">🔀 Chia Tiền</button>
     <button id="ddlBtnSummary" onclick="setDdlSection('summary')">📊 Tổng hợp ĐL</button>
     <button id="ddlBtnLedger" onclick="setDdlSection('ledger')">📒 Sổ chi tiết ĐL</button>
   </div>
@@ -967,6 +972,9 @@ function switchTab(tab){
   document.getElementById('debtdlTab').classList.toggle('hidden', tab!=='debtdl');
   document.getElementById('candoiTab').classList.toggle('hidden', tab!=='candoi');
   document.getElementById('settingsTab').classList.toggle('hidden', tab!=='settings');
+  const isCreateGroup = (tab==='sheet' || tab==='history' || tab==='customers');
+  document.getElementById('createSubTabBar').classList.toggle('hidden', !isCreateGroup);
+  document.getElementById('tabBtnCreate').classList.toggle('active', isCreateGroup);
   document.getElementById('tabBtnSheet').classList.toggle('active', tab==='sheet');
   document.getElementById('tabBtnHistory').classList.toggle('active', tab==='history');
   document.getElementById('tabBtnCustomers').classList.toggle('active', tab==='customers');
@@ -1366,10 +1374,21 @@ function renderDebtKhTable(){
   const wrap = document.getElementById('debtkhTableWrap');
   const customerName = document.getElementById('debtkhCustomer')?.value;
   if(!customerName){ wrap.innerHTML = `<div class="empty-state">Chưa có khách hàng để hiển thị</div>`; return; }
+  const from = document.getElementById('debtkhFrom')?.value;
   const rows = getFilteredDebtKhRows(customerName);
   if(rows.length===0){ wrap.innerHTML = `<div class="empty-state">Không có dữ liệu trong khoảng ngày đã chọn</div>`; return; }
+  const dauKy = getCustomerOpeningBalance(customerName, from);
   const tongNo = rows.reduce((s,r)=>s+r.no,0);
   const tongCo = rows.reduce((s,r)=>s+r.co,0);
+  const dauKyRow = from ? `
+    <tr style="background:#F2F3F6;font-weight:700;">
+      <td class="readonly"></td>
+      <td style="text-align:left;padding:6px 8px;">Số dư đầu kỳ (trước ${formatDateVN(from)})</td>
+      <td class="readonly"></td>
+      <td class="readonly"></td>
+      <td class="readonly">${formatNumber(dauKy)}</td>
+    </tr>
+  ` : '';
   const body = rows.map((r,i)=>`
     <tr>
       <td class="readonly">${i+1}</td>
@@ -1382,7 +1401,7 @@ function renderDebtKhTable(){
   wrap.innerHTML = `
     <table class="grid">
       <thead><tr><th style="width:40px;">STT</th><th>DIỄN GIẢI</th><th style="width:120px;">NỢ</th><th style="width:120px;">CÓ</th><th style="width:130px;">LUỸ KẾ</th></tr></thead>
-      <tbody>${body}
+      <tbody>${dauKyRow}${body}
         <tr class="sum-row"><td colspan="2">TỔNG (trong khoảng đã chọn)</td><td style="color:var(--rust);">${formatNumber(tongNo)}</td><td style="color:var(--moss);">${formatNumber(tongCo)}</td><td></td></tr>
       </tbody>
     </table>
@@ -1511,8 +1530,10 @@ function shareDebtKhImage(){
     if(!customerName){ alert("Chọn khách hàng trước"); return; }
     const rows = getFilteredDebtKhRows(customerName);
     if(rows.length===0){ alert("Không có dữ liệu trong khoảng ngày đã chọn"); return; }
+    const dauKy = getCustomerOpeningBalance(customerName, from);
     const tongNo = rows.reduce((s,r)=>s+r.no,0);
     const tongCo = rows.reduce((s,r)=>s+r.co,0);
+    const dauKyRowHtml = from ? `<tr style="font-weight:700;background:#F2F3F6;"><td style="padding:4px 6px;border:1px solid #999;"></td><td style="padding:4px 6px;border:1px solid #999;text-align:left;">Số dư đầu kỳ (trước ${formatDateVN(from)})</td><td style="padding:4px 6px;border:1px solid #999;"></td><td style="padding:4px 6px;border:1px solid #999;"></td><td style="padding:4px 6px;border:1px solid #999;text-align:right;">${formatNumber(dauKy)}</td></tr>` : '';
     const body = rows.map((r,i)=>`<tr><td style="padding:4px 6px;border:1px solid #999;">${i+1}</td><td style="padding:4px 6px;border:1px solid #999;text-align:left;">${formatDateVN(r.date)} — ${escapeHtml(r.note)}</td><td style="padding:4px 6px;border:1px solid #999;text-align:right;">${r.no?formatNumber(r.no):''}</td><td style="padding:4px 6px;border:1px solid #999;text-align:right;">${r.co?formatNumber(r.co):''}</td><td style="padding:4px 6px;border:1px solid #999;text-align:right;">${formatNumber(r.luyKe)}</td></tr>`).join('');
     const html = `
       <div style="font-family:Inter,sans-serif;color:#111;">
@@ -1527,6 +1548,7 @@ function shareDebtKhImage(){
             <th style="padding:5px 6px;border:1px solid #999;background:#EAF1FB;">LUỸ KẾ</th>
           </tr></thead>
           <tbody>
+            ${dauKyRowHtml}
             ${body}
             <tr style="font-weight:700;background:#eee;"><td colspan="2" style="padding:5px 6px;border:1px solid #999;">TỔNG</td><td style="padding:5px 6px;border:1px solid #999;text-align:right;">${formatNumber(tongNo)}</td><td style="padding:5px 6px;border:1px solid #999;text-align:right;">${formatNumber(tongCo)}</td><td style="border:1px solid #999;"></td></tr>
           </tbody>
@@ -3228,7 +3250,12 @@ function updateStickyOffsets(){
   const tabsH = tabsEl ? tabsEl.offsetHeight : 46;
   document.documentElement.style.setProperty('--tabs-h', tabsH + 'px');
   const ddlSectionTab = document.querySelector('#debtdlTab > .section-tab');
-  const stH = (ddlSectionTab && ddlSectionTab.offsetHeight) ? ddlSectionTab.offsetHeight : 46;
+  const createSectionTab = document.getElementById('createSubTabBar');
+  const stH = Math.max(
+    (ddlSectionTab && ddlSectionTab.offsetHeight) || 0,
+    (createSectionTab && createSectionTab.offsetHeight) || 0,
+    46
+  );
   document.documentElement.style.setProperty('--stage2-h', (tabsH + stH) + 'px');
 }
 window.addEventListener('resize', updateStickyOffsets);
@@ -3240,6 +3267,8 @@ updateAllSuggestions();
 initDdlEntryRows();
 document.getElementById('ddlPayDate').value = todayKey();
 setTimeout(hideLoadingOverlay, 8000);
+switchTab('debtdl');
+setDdlSection('pay');
 // Thư viện Firebase (tải kiểu defer, chạy nền) có thể chưa xong ngay lúc dòng này chạy tới —
 // đợi sự kiện 'load' (báo hiệu mọi script nền đã tải & chạy xong) rồi mới kết nối, tránh lỗi "Lỗi đồng bộ".
 if(document.readyState==='complete'){ cloudInit(); }
