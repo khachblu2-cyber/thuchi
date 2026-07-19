@@ -90,7 +90,7 @@
   <div class="wrap">
     <div class="title">📒 Sổ Thu Chi Tổng — 4 Công Ty</div>
     <div class="save-status" id="cloudStatus" style="color:#93A5C4;"></div>
-    <div class="save-status" style="color:#7C93B8;opacity:.75;">Phiên bản: V4.0.0</div>
+    <div class="save-status" style="color:#7C93B8;opacity:.75;">Phiên bản: V4.1.0</div>
   </div>
 </div>
 
@@ -748,8 +748,13 @@ function handleGridNavKey(e, tbody, fieldOrder){
   }
   if(e.key==='ArrowUp'){ e.preventDefault(); focusCell(rowIdx-1, colIdx); }
   else if(e.key==='ArrowDown' || e.key==='Enter'){ e.preventDefault(); focusCell(rowIdx+1, colIdx); }
-  else if(e.key==='ArrowLeft' && input.selectionStart===0 && input.selectionEnd===0){ if(focusCell(rowIdx, colIdx-1)) e.preventDefault(); }
-  else if(e.key==='ArrowRight' && input.selectionStart===input.value.length && input.selectionEnd===input.value.length){ if(focusCell(rowIdx, colIdx+1)) e.preventDefault(); }
+  else{
+    const isTextInput = input.tagName==='INPUT';
+    const atStart = isTextInput ? (input.selectionStart===0 && input.selectionEnd===0) : true;
+    const atEnd = isTextInput ? (input.selectionStart===input.value.length && input.selectionEnd===input.value.length) : true;
+    if(e.key==='ArrowLeft' && atStart){ if(focusCell(rowIdx, colIdx-1)) e.preventDefault(); }
+    else if(e.key==='ArrowRight' && atEnd){ if(focusCell(rowIdx, colIdx+1)) e.preventDefault(); }
+  }
 }
 
 let sheets = loadJSON(SHEETS_KEY, []);
@@ -1149,7 +1154,7 @@ function attachDealerFieldEvents(){
   // Dán dữ liệu từ Excel
   const tbody = document.getElementById('dealerTbody');
   tbody.onpaste = handleDealerPaste;
-  attachGridArrowNav('dealerTbody', ['soCon','kg','giaTien']);
+  attachGridArrowNav('dealerTbody', ['dealer','soCon','kg','giaTien','ghiChu']);
 }
 function handleDealerPaste(e){
   const target = e.target;
@@ -1664,7 +1669,7 @@ function buildSheetImageInnerHtml(s){
   const dealerRowsHtml = s.dealerRows.map((r,i)=>{
     const kg=Number(r.kg)||0, gia=Number(r.giaTien)||0, tt=kg*gia;
     sumKg+=kg; sumThanhTien+=tt;
-    return `<tr><td style="padding:4px 6px;border:1px solid #999;">${i+1}</td><td style="padding:4px 6px;border:1px solid #999;">${escapeHtml(r.dealer)}</td><td style="padding:4px 6px;border:1px solid #999;text-align:right;">${r.soCon}</td><td style="padding:4px 6px;border:1px solid #999;text-align:right;">${kg}</td><td style="padding:4px 6px;border:1px solid #999;text-align:right;">${formatNumber(gia)}</td><td style="padding:4px 6px;border:1px solid #999;text-align:right;">${formatNumber(tt)}</td><td style="padding:4px 6px;border:1px solid #999;">${escapeHtml(r.ghiChu)}</td></tr>`;
+    return `<tr><td style="padding:4px 6px;border:1px solid #999;">${i+1}</td><td style="padding:4px 6px;border:1px solid #999;">${escapeHtml(r.dealer)}</td><td style="padding:4px 6px;border:1px solid #999;text-align:right;">${r.soCon}</td><td style="padding:4px 6px;border:1px solid #999;text-align:right;">${formatNumber(kg)}</td><td style="padding:4px 6px;border:1px solid #999;text-align:right;">${formatNumber(gia)}</td><td style="padding:4px 6px;border:1px solid #999;text-align:right;">${formatNumber(tt)}</td><td style="padding:4px 6px;border:1px solid #999;">${escapeHtml(r.ghiChu)}</td></tr>`;
   }).join('');
   const sumFee = s.feeRows.reduce((sum,r)=>sum+(Number(r.amount)||0),0);
   const tongCong = sumThanhTien + s.tienCu + sumFee;
@@ -1688,7 +1693,7 @@ function buildSheetImageInnerHtml(s){
         </tr></thead>
         <tbody>
           ${dealerRowsHtml}
-          <tr style="font-weight:700;background:#eee;"><td colspan="2" style="padding:5px 6px;border:1px solid #999;">CỘNG</td><td style="border:1px solid #999;"></td><td style="padding:5px 6px;border:1px solid #999;text-align:right;">${sumKg}</td><td style="border:1px solid #999;"></td><td style="padding:5px 6px;border:1px solid #999;text-align:right;">${formatNumber(sumThanhTien)}</td><td style="border:1px solid #999;"></td></tr>
+          <tr style="font-weight:700;background:#eee;"><td colspan="2" style="padding:5px 6px;border:1px solid #999;">CỘNG</td><td style="border:1px solid #999;"></td><td style="padding:5px 6px;border:1px solid #999;text-align:right;">${formatNumber(sumKg)}</td><td style="border:1px solid #999;"></td><td style="padding:5px 6px;border:1px solid #999;text-align:right;">${formatNumber(sumThanhTien)}</td><td style="border:1px solid #999;"></td></tr>
           <tr style="font-weight:700;"><td colspan="5" style="padding:5px 6px;border:1px solid #999;text-align:left;">TIỀN CŨ</td><td style="padding:5px 6px;border:1px solid #999;text-align:right;">${formatNumber(s.tienCu)}</td><td style="border:1px solid #999;"></td></tr>
           ${feeRowsHtml}
           <tr style="font-weight:700;background:#FFF6C9;"><td colspan="5" style="padding:5px 6px;border:1px solid #999;text-align:left;">TỔNG CỘNG</td><td style="padding:5px 6px;border:1px solid #999;text-align:right;">${formatNumber(tongCong)}</td><td style="border:1px solid #999;"></td></tr>
@@ -2134,7 +2139,7 @@ function exportSheetExcel(){
     sumKg+=kg; sumThanhTien+=tt;
     aoa.push([i+1, r.dealer, r.soCon, kg, gia, tt, r.ghiChu]);
   });
-  aoa.push(["","CỘNG","",sumKg,"",sumThanhTien,""]);
+  aoa.push(["","CỘNG","",Math.round(sumKg*100)/100,"",sumThanhTien,""]);
   aoa.push(["TIỀN CŨ","","","","",s.tienCu,""]);
   s.feeRows.forEach(r=> aoa.push([r.name,"","","","",Number(r.amount)||0,""]));
   const sumFee = s.feeRows.reduce((sum,r)=>sum+(Number(r.amount)||0),0);
@@ -2158,7 +2163,7 @@ function printSheet(){
   const dealerRowsHtml = s.dealerRows.map((r,i)=>{
     const kg=Number(r.kg)||0, gia=Number(r.giaTien)||0, tt=kg*gia;
     sumKg+=kg; sumThanhTien+=tt;
-    return `<tr><td>${i+1}</td><td>${escapeHtml(r.dealer)}</td><td class="num">${r.soCon}</td><td class="num">${kg}</td><td class="num">${formatNumber(gia)}</td><td class="num">${formatNumber(tt)}</td><td>${escapeHtml(r.ghiChu)}</td></tr>`;
+    return `<tr><td>${i+1}</td><td>${escapeHtml(r.dealer)}</td><td class="num">${r.soCon}</td><td class="num">${formatNumber(kg)}</td><td class="num">${formatNumber(gia)}</td><td class="num">${formatNumber(tt)}</td><td>${escapeHtml(r.ghiChu)}</td></tr>`;
   }).join('');
   const sumFee = s.feeRows.reduce((sum,r)=>sum+(Number(r.amount)||0),0);
   const tongCong = sumThanhTien + s.tienCu + sumFee;
@@ -2175,7 +2180,7 @@ function printSheet(){
         <thead><tr><th>STT</th><th>ĐẠI LÝ</th><th>SỐ CON</th><th>KG</th><th>GIÁ TIỀN</th><th>THÀNH TIỀN</th><th>GHI CHÚ</th></tr></thead>
         <tbody>
           ${dealerRowsHtml}
-          <tr style="font-weight:700;background:#eee;"><td colspan="2">CỘNG</td><td></td><td class="num">${sumKg}</td><td></td><td class="num">${formatNumber(sumThanhTien)}</td><td></td></tr>
+          <tr style="font-weight:700;background:#eee;"><td colspan="2">CỘNG</td><td></td><td class="num">${formatNumber(sumKg)}</td><td></td><td class="num">${formatNumber(sumThanhTien)}</td><td></td></tr>
           <tr style="font-weight:700;"><td colspan="5" style="text-align:left;">TIỀN CŨ</td><td class="num">${formatNumber(s.tienCu)}</td><td></td></tr>
           ${feeRowsHtml}
           <tr style="font-weight:700;background:#FFF6C9;"><td colspan="5" style="text-align:left;">TỔNG CỘNG</td><td class="num">${formatNumber(tongCong)}</td><td></td></tr>
