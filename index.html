@@ -75,13 +75,14 @@
     #printArea{display:block !important;position:absolute;top:0;left:0;width:100%;}
     @page{ size: A4; margin: 12mm; }
   }
-  .print-sheet{font-family:'Inter',sans-serif;}
+  .print-sheet{font-family:'Times New Roman', Times, serif;}
   .print-sheet h2{text-align:center;margin:0 0 4px;}
   .print-sheet .sub{text-align:center;font-weight:700;margin-bottom:14px;}
-  table.print-table{width:100%;border-collapse:collapse;font-size:12px;}
-  table.print-table th,table.print-table td{border:1px solid #333;padding:5px 7px;}
-  table.print-table th{background:#eee;}
-  table.print-table td.num{text-align:right;font-family:'IBM Plex Mono',monospace;}
+  table.print-table{width:100%;border-collapse:collapse;font-size:12.5pt;font-family:'Times New Roman', Times, serif;}
+  table.print-table th,table.print-table td{border:0.7pt solid #333;padding:5pt 7pt;font-family:'Times New Roman', Times, serif;}
+  table.print-table th{background:#eee;font-size:11.5pt;}
+  table.print-table td.num{text-align:right;font-family:'Times New Roman', Times, serif;white-space:nowrap;}
+  table.print-table tr{break-inside:avoid;}
 </style>
 </head>
 <body>
@@ -90,7 +91,7 @@
   <div class="wrap">
     <div class="title">📒 Sổ Thu Chi Tổng — 4 Công Ty</div>
     <div class="save-status" id="cloudStatus" style="color:#93A5C4;"></div>
-    <div class="save-status" style="color:#7C93B8;opacity:.75;">Phiên bản: V4.1.0</div>
+    <div class="save-status" style="color:#7C93B8;opacity:.75;">Phiên bản: V4.2.3</div>
   </div>
 </div>
 
@@ -1473,6 +1474,33 @@ function exportDebtKhExcel(){
   XLSX.utils.book_append_sheet(wb, ws, "Cong no");
   XLSX.writeFile(wb, `cong-no-${customerName}.xlsx`);
 }
+function printHtmlInNewWindow(bodyHtml, title){
+  const win = window.open('', '_blank');
+  if(!win){ alert('Trình duyệt đang chặn cửa sổ in — vui lòng cho phép popup cho trang này rồi thử lại.'); return; }
+  win.document.open();
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${title}</title>
+    <style>
+      body{margin:0;padding:0;font-family:'Times New Roman', Times, serif;}
+      .print-content{padding:14mm;}
+      .print-sheet h2{text-align:center;margin:0 0 4px;}
+      .print-sheet .sub{text-align:center;font-weight:700;margin-bottom:14px;}
+      table.print-table{width:100%;border-collapse:collapse;font-size:12.5pt;font-family:'Times New Roman', Times, serif;}
+      table.print-table th,table.print-table td{border:0.7pt solid #333;padding:5pt 7pt;font-family:'Times New Roman', Times, serif;}
+      table.print-table th{background:#eee;font-size:11.5pt;}
+      table.print-table td.num{text-align:right;white-space:nowrap;}
+      #closePrintBtn{position:fixed;top:12px;right:12px;z-index:9;background:#1B2430;color:#fff;border:none;border-radius:8px;padding:10px 16px;font-size:14px;font-weight:700;cursor:pointer;font-family:sans-serif;}
+      @page{ size:A4; margin:14mm; }
+      @media print{ #closePrintBtn{ display:none !important; } }
+    </style>
+  </head><body>
+    <button id="closePrintBtn" onclick="window.close()">✕ Đóng</button>
+    <div class="print-content">${bodyHtml}</div>
+  </body></html>`);
+  win.document.close();
+  const doPrint = ()=>{ win.focus(); win.print(); };
+  win.onload = doPrint;
+  setTimeout(doPrint, 400);
+}
 function printDebtKh(){
   const customerName = document.getElementById('debtkhCustomer')?.value;
   if(!customerName){ alert("Chọn khách hàng trước"); return; }
@@ -1484,7 +1512,7 @@ function printDebtKh(){
   const to = document.getElementById('debtkhTo')?.value;
   const periodText = (from||to) ? `Từ ${from?formatDateVN(from):'...'} đến ${to?formatDateVN(to):'...'}` : 'Toàn bộ thời gian';
   const body = rows.map((r,i)=>`<tr><td>${i+1}</td><td style="text-align:left;">${formatDateVN(r.date)} — ${escapeHtml(r.note)}</td><td class="num">${r.no?formatNumber(r.no):''}</td><td class="num">${r.co?formatNumber(r.co):''}</td><td class="num">${formatNumber(r.luyKe)}</td></tr>`).join('');
-  document.getElementById('printArea').innerHTML = `
+  const html = `
     <div class="print-sheet">
       <h2>CÔNG NỢ KHÁCH HÀNG</h2>
       <div class="sub">${escapeHtml(customerName)} — ${escapeHtml(periodText)}</div>
@@ -1496,7 +1524,7 @@ function printDebtKh(){
       </table>
     </div>
   `;
-  window.print();
+  printHtmlInNewWindow(html, 'Công nợ khách hàng');
 }
 
 // ===== CHIA SẺ ẢNH DÙNG CHUNG =====
@@ -2172,7 +2200,7 @@ function printSheet(){
   const feeRowsHtml = s.feeRows.map(r=>`<tr><td colspan="5" style="text-align:left;">${escapeHtml(r.name)}</td><td class="num">${formatNumber(r.amount)}</td><td></td></tr>`).join('');
   const deductRowsHtml = s.deductRows.map(r=>`<tr><td colspan="5" style="text-align:left;">${escapeHtml(r.name)}</td><td class="num">${formatNumber(r.amount)}</td><td></td></tr>`).join('');
 
-  document.getElementById('printArea').innerHTML = `
+  const html = `
     <div class="print-sheet">
       <h2>Ngày ${formatDateVN(s.date)}</h2>
       <div class="sub">${escapeHtml(s.title || "Phiếu thu chi")}</div>
@@ -2190,7 +2218,7 @@ function printSheet(){
       </table>
     </div>
   `;
-  window.print();
+  printHtmlInNewWindow(html, `Phiếu thu chi ${s.date}`);
 }
 
 // ===== CÔNG NỢ ĐẠI LÝ (nhập tay, tách theo từng khách hàng) =====
@@ -2953,7 +2981,7 @@ function printDdlLedger(){
   const to = document.getElementById('ddlLedgerTo')?.value;
   const periodText = (from||to) ? `Từ ${from?formatDateVN(from):'...'} đến ${to?formatDateVN(to):'...'}` : 'Toàn bộ thời gian';
   const body = rows.map((r,i)=>`<tr><td>${i+1}</td><td style="text-align:left;">${formatDateVN(r.date)} — ${escapeHtml(r.note)}</td><td class="num">${r.phatSinh?formatNumber(r.phatSinh):''}</td><td class="num">${r.daChi?formatNumber(r.daChi):''}</td><td class="num">${formatNumber(r.luyKe)}</td></tr>`).join('');
-  document.getElementById('printArea').innerHTML = `
+  const html = `
     <div class="print-sheet">
       <h2>SỔ CHI TIẾT CÔNG NỢ ĐẠI LÝ</h2>
       <div class="sub">${escapeHtml(dealer)} — ${escapeHtml(periodText)}</div>
@@ -2965,7 +2993,7 @@ function printDdlLedger(){
       </table>
     </div>
   `;
-  window.print();
+  printHtmlInNewWindow(html, `Sổ chi tiết ${dealer}`);
 }
 
 // ===== CÂN ĐỐI: NỢ ĐẠI LÝ vs NỢ CÔNG TY, theo từng khách hàng =====
@@ -2988,9 +3016,10 @@ function renderCanDoi(){
     ncoTotals[name] = dealerSales.filter(x=> x.customer===name && !x.paid).reduce((s,x)=>s+x.amount,0);
   });
   if(rows.length===0 && !showNco){ wrap.innerHTML = `<div class="empty-state">Chưa có dữ liệu để cân đối</div>`; return; }
-  const grandNoDaiLy = rows.reduce((s,r)=>s+r.noDaiLy,0);
+  const ncoSum = showNco ? NCO_CUSTOMER_NAMES.reduce((s,name)=>s+(ncoTotals[name]||0),0) : 0;
+  const grandNoDaiLy = rows.reduce((s,r)=>s+r.noDaiLy,0) + ncoSum;
   const grandNoCongTy = rows.reduce((s,r)=>s+r.noCongTy,0);
-  const grandChenh = rows.reduce((s,r)=>s+r.chenhLech,0);
+  const grandChenh = rows.reduce((s,r)=>s+r.chenhLech,0) - ncoSum;
   const body = rows.map((r,i)=>`
     <tr>
       <td class="readonly">${i+1}</td>
@@ -3016,18 +3045,31 @@ function renderCanDoi(){
         <tr class="sum-row"><td colspan="2">TỔNG</td><td style="color:var(--rust);">${formatNumber(grandNoDaiLy)}</td><td style="color:var(--blue-dk);">${formatNumber(grandNoCongTy)}</td><td style="color:${grandChenh<0?'var(--rust)':'var(--moss)'};">${grandChenh<0?'':'+'}${formatNumber(grandChenh)}</td></tr>
       </tbody>
     </table>
-    ${showNco ? `<div class="muted" style="font-size:11px;margin-top:6px;">🧊 Nguyên con/Oxy hiện chỉ mang tính tham khảo thêm (chi phí vật tư, không có khách hàng đối ứng) — không tính vào TỔNG Chênh lệch phía trên.</div>` : ''}
+    ${showNco ? `<div class="muted" style="font-size:11px;margin-top:6px;">🧊 Nguyên con/Oxy (chi phí vật tư, không có khách hàng đối ứng) đã được cộng vào cột Nợ Đại lý và Tổng Chênh lệch phía trên.</div>` : ''}
   `;
 }
 function exportCanDoiExcel(){
   const rows = buildCanDoiRows();
-  if(rows.length===0){ alert("Chưa có dữ liệu để xuất"); return; }
+  const showNco = document.getElementById('candoiShowNco')?.checked;
+  if(rows.length===0 && !showNco){ alert("Chưa có dữ liệu để xuất"); return; }
   const aoa = [
     ["BẢNG CÂN ĐỐI CÔNG NỢ THEO KHÁCH HÀNG"],
     [],
     ["STT","KHÁCH HÀNG","NỢ ĐẠI LÝ","NỢ CÔNG TY","CHÊNH LỆCH"],
   ];
   rows.forEach((r,i)=> aoa.push([i+1, `${r.code} - ${r.name}`, r.noDaiLy, r.noCongTy, r.chenhLech]));
+  let ncoSum = 0;
+  if(showNco){
+    NCO_CUSTOMER_NAMES.forEach(name=>{
+      const amt = dealerSales.filter(x=> x.customer===name && !x.paid).reduce((s,x)=>s+x.amount,0);
+      ncoSum += amt;
+      aoa.push(["", `${name} (chưa chi cho đại lý)`, amt, "", -amt]);
+    });
+  }
+  const grandNoDaiLy = rows.reduce((s,r)=>s+r.noDaiLy,0) + ncoSum;
+  const grandNoCongTy = rows.reduce((s,r)=>s+r.noCongTy,0);
+  const grandChenh = rows.reduce((s,r)=>s+r.chenhLech,0) - ncoSum;
+  aoa.push(["", "TỔNG", grandNoDaiLy, grandNoCongTy, grandChenh]);
   const ws = XLSX.utils.aoa_to_sheet(aoa);
   ws['!cols'] = [{wch:6},{wch:30},{wch:16},{wch:16},{wch:16}];
   const wb = XLSX.utils.book_new();
