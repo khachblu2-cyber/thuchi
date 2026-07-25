@@ -91,7 +91,7 @@
   <div class="wrap">
     <div class="title">📒 Sổ Thu Chi Tổng — 4 Công Ty</div>
     <div class="save-status" id="cloudStatus" style="color:#93A5C4;"></div>
-    <div class="save-status" style="color:#7C93B8;opacity:.75;">Phiên bản: V4.2.3</div>
+    <div class="save-status" style="color:#7C93B8;opacity:.75;">Phiên bản: V4.6.0</div>
   </div>
 </div>
 
@@ -101,6 +101,8 @@
     <button class="tab-btn" id="tabBtnDebtKH" onclick="switchTab('debtkh')">🧮 Công nợ KH</button>
     <button class="tab-btn" id="tabBtnDebtDL" onclick="switchTab('debtdl')">🚚 Công nợ Đại lý</button>
     <button class="tab-btn" id="tabBtnCanDoi" onclick="switchTab('candoi')">⚖️ Cân đối</button>
+    <button class="tab-btn hidden" id="tabBtnNcc" onclick="switchTab('ncc')">🏭 Công nợ NCC</button>
+    <button class="tab-btn hidden" id="tabBtnExtraCost" onclick="switchTab('extracost')">💸 Chi phí khác</button>
     <button class="tab-btn" id="tabBtnSettings" onclick="switchTab('settings')">⚙️ Cài đặt</button>
   </div>
 </div>
@@ -379,6 +381,17 @@
         <button class="active" id="ddlPayViewUnpaidBtn" onclick="setDdlPayView('unpaid')">🔴 Chưa chi</button>
         <button id="ddlPayViewPaidBtn" onclick="setDdlPayView('paid')">👁 Xem đã chi</button>
       </div>
+      <div id="ddlPayPaidFilterBar" class="hidden" style="margin-top:10px;">
+        <div class="row-flex" style="flex-wrap:wrap;gap:6px;">
+          <button class="btn btn-outline btn-sm ddl-paid-qf active" data-mode="today" onclick="setDdlPayPaidFilter('today')">Hôm nay</button>
+          <button class="btn btn-outline btn-sm ddl-paid-qf" data-mode="yesterday" onclick="setDdlPayPaidFilter('yesterday')">Hôm qua</button>
+          <button class="btn btn-outline btn-sm ddl-paid-qf" data-mode="daybefore" onclick="setDdlPayPaidFilter('daybefore')">Hôm kia</button>
+          <button class="btn btn-outline btn-sm ddl-paid-qf" data-mode="all" onclick="setDdlPayPaidFilter('all')">Tất cả</button>
+          <div class="field" style="max-width:170px;margin:0;">
+            <input type="date" id="ddlPayPaidFromDate" onchange="setDdlPayPaidFilter('custom')">
+          </div>
+        </div>
+      </div>
       <div id="ddlPayTotalOwedBox" style="margin-top:10px;padding:10px 12px;background:#FBEAE6;border-radius:9px;font-weight:700;color:var(--rust);"></div>
     </div>
     <div class="card" style="overflow-x:auto;"><div id="ddlPayListWrap"></div></div>
@@ -455,6 +468,120 @@
   </div>
 </div>
 
+<!-- ============ TAB: CÔNG NỢ NHÀ CUNG CẤP ============ -->
+<div id="nccTab" class="wrap hidden">
+  <div class="section-tab sticky-below-tabs">
+    <button class="active" id="nccBtnEntry" onclick="setNccSection('entry')">➕ Nhập liệu</button>
+    <button id="nccBtnList" onclick="setNccSection('list')">🏭 Danh mục NCC</button>
+    <button id="nccBtnLedger" onclick="setNccSection('ledger')">📒 Sổ chi tiết NCC</button>
+  </div>
+
+  <!-- NHẬP LIỆU (nhiều dòng cùng lúc, giống Nhập liệu Đại Lý) + Trả tiền ngay bên dưới -->
+  <div id="nccEntrySection">
+    <div class="card" style="overflow-x:auto;">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:4px;">
+        <div class="card-title" style="margin-bottom:0;">Ghi nhận khoản mua hàng / dịch vụ từ nhà cung cấp</div>
+        <div id="nccEntryTotalBox" style="padding:7px 12px;background:#EAF1FB;border-radius:8px;font-weight:700;color:var(--blue-dk);font-size:13px;white-space:nowrap;">Tổng: 0</div>
+      </div>
+      <table class="grid" id="nccEntryTable">
+        <thead><tr><th style="width:88px;">Ngày</th><th style="width:200px;">Nhà cung cấp</th><th style="width:160px;">Người mua</th><th style="min-width:160px;">Nội dung</th><th style="width:150px;">Số tiền</th><th>Ghi chú</th><th style="width:30px;"></th></tr></thead>
+        <tbody id="nccEntryTbody"></tbody>
+      </table>
+      <datalist id="nccBuyerList"></datalist>
+      <div class="row-flex" style="margin-top:10px;">
+        <button class="btn btn-outline" onclick="addNccEntryRow()">➕ Thêm dòng</button>
+        <button class="btn btn-primary" onclick="saveNccEntries()">💾 Lưu</button>
+      </div>
+    </div>
+
+    <div class="card" style="overflow-x:auto;">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:4px;">
+        <div class="card-title" style="margin-bottom:0;">Ghi nhận khoản đã trả cho nhà cung cấp</div>
+        <div id="nccPaymentTotalBox" style="padding:7px 12px;background:#E5F2EB;border-radius:8px;font-weight:700;color:var(--moss);font-size:13px;white-space:nowrap;">Tổng: 0</div>
+      </div>
+      <div class="muted" style="font-size:12px;margin-bottom:8px;">Chỉ cần nhập số tiền đã trả — không cần chọn khớp với từng khoản mua hàng cụ thể.</div>
+      <table class="grid" id="nccPaymentTable">
+        <thead><tr><th style="width:88px;">Ngày</th><th style="width:220px;">Nhà cung cấp</th><th style="width:180px;">Số tiền</th><th style="width:30px;"></th></tr></thead>
+        <tbody id="nccPaymentTbody"></tbody>
+      </table>
+      <div class="row-flex" style="margin-top:10px;">
+        <button class="btn btn-outline" onclick="addNccPaymentRow()">➕ Thêm dòng</button>
+        <button class="btn btn-primary" onclick="saveNccPayments()">💾 Lưu</button>
+      </div>
+    </div>
+
+    <div class="card" style="overflow-x:auto;">
+      <div class="card-title">Lịch sử đã trả gần đây</div>
+      <div id="nccPaymentHistoryWrap"></div>
+    </div>
+  </div>
+
+  <!-- DANH MỤC NCC -->
+  <div id="nccListSection" class="hidden">
+    <div class="card">
+      <div class="card-title">Thêm nhà cung cấp mới</div>
+      <div class="row-flex">
+        <div class="field"><label>Tên nhà cung cấp</label><input type="text" id="newSupplierName"></div>
+        <div class="field"><label>Ghi chú</label><input type="text" id="newSupplierNote"></div>
+        <div class="field" style="max-width:140px;"><label>&nbsp;</label><button class="btn btn-primary" style="width:100%;" onclick="addSupplier()">✚ Thêm</button></div>
+      </div>
+    </div>
+    <div class="card" style="overflow-x:auto;"><div id="supplierListWrap"></div></div>
+  </div>
+
+  <!-- SỔ CHI TIẾT NCC -->
+  <div id="nccLedgerSection" class="hidden">
+    <div class="card">
+      <div class="card-title">Chọn nhà cung cấp</div>
+      <select id="nccLedgerSupplier" onchange="onNccLedgerSupplierChange()">
+        <option value="__ALL__">-- Tất cả nhà cung cấp --</option>
+      </select>
+      <div class="row-flex" style="margin-top:12px;" id="nccLedgerOpeningRow">
+        <div class="field"><label>Số dư đầu kỳ (nếu có, chuyển từ sổ cũ)</label><input type="text" id="nccLedgerOpening" value="0" inputmode="decimal" oninput="formatNumberFieldLive(event)" onblur="forceReformatNumberField(event)" onchange="saveNccOpeningBalance()"></div>
+      </div>
+      <div class="row-flex" style="margin-top:12px;">
+        <div class="field"><label>Từ ngày</label><input type="date" id="nccLedgerFrom" onchange="renderNccLedger()"></div>
+        <div class="field"><label>Đến ngày</label><input type="date" id="nccLedgerTo" onchange="renderNccLedger()"></div>
+        <div class="field" style="max-width:140px;"><label>&nbsp;</label><button class="btn btn-outline" style="width:100%;" onclick="clearNccLedgerDateFilter()">Xem tất cả</button></div>
+      </div>
+    </div>
+    <div class="card" style="overflow-x:auto;"><div id="nccLedgerWrap"></div></div>
+    <div class="row-flex" style="margin:14px 0 30px;">
+      <button class="btn btn-outline" onclick="exportNccLedgerExcel()">📊 Xuất Excel</button>
+      <button class="btn btn-outline" onclick="shareNccLedgerImage()">📤 Chia sẻ ảnh</button>
+      <button class="btn btn-outline" onclick="printNccLedger()">🖨 In A4</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ TAB: CHI PHÍ KHÁC (báo cáo phí trong phiếu: Phí GC, Thuê xe, Thuê code...) ============ -->
+<div id="extraCostTab" class="wrap hidden">
+  <div class="card">
+    <div class="card-title">Tổng hợp các khoản phí đã cộng vào Tổng khi Lập phiếu</div>
+    <div class="muted" style="font-size:12px;margin-bottom:10px;">Lấy trực tiếp từ các dòng "Phí" (Phí gia công, Thuê xe, Thuê code...) mà bạn nhập khi Lập phiếu — không cần nhập lại ở đây.</div>
+    <div class="row-flex" style="align-items:flex-end;">
+      <button class="btn btn-outline" id="ecfAll" onclick="setExtraCostQuickFilter('all')">Tất cả</button>
+      <button class="btn btn-outline" id="ecfMonth" onclick="setExtraCostQuickFilter('month')">Tháng này</button>
+      <div class="field" style="max-width:160px;"><label>Từ ngày</label><input type="date" id="ecFrom" onchange="setExtraCostQuickFilter('custom')"></div>
+      <div class="field" style="max-width:160px;"><label>Đến ngày</label><input type="date" id="ecTo" onchange="setExtraCostQuickFilter('custom')"></div>
+      <div class="field"><label>Lọc theo loại phí</label><select id="ecLoaiFilter" onchange="renderExtraCostList()"><option value="">-- Tất cả loại phí --</option></select></div>
+    </div>
+  </div>
+
+  <div class="card" style="overflow-x:auto;">
+    <div style="display:flex;justify-content:flex-end;margin-bottom:10px;">
+      <div id="extraCostTotalBox" style="padding:9px 14px;background:#EAF1FB;border-radius:9px;font-weight:700;color:var(--blue-dk);font-size:13px;"></div>
+    </div>
+    <div class="card-title">Theo loại phí</div>
+    <div id="extraCostSummaryWrap" style="margin-bottom:14px;"></div>
+    <div class="card-title">Chi tiết từng khoản</div>
+    <div id="extraCostListWrap"></div>
+  </div>
+  <div class="row-flex" style="margin:14px 0 30px;">
+    <button class="btn btn-outline" onclick="exportExtraCostExcel()">📊 Xuất Excel</button>
+  </div>
+</div>
+
 <!-- ============ TAB: CÂN ĐỐI ============ -->
 <div id="candoiTab" class="wrap hidden">
   <div class="card">
@@ -475,6 +602,13 @@
 </div>
 
 <div id="settingsTab" class="wrap hidden">
+  <div class="card">
+    <div class="card-title">👁 Hiện / Ẩn tab nâng cao</div>
+    <div class="muted" style="font-size:12px;margin-bottom:10px;">Mặc định ẩn bớt 2 mục ít dùng hằng ngày cho gọn thanh tab. Bật lên khi cần dùng.</div>
+    <label style="display:flex;align-items:center;gap:8px;font-size:13.5px;cursor:pointer;">
+      <input type="checkbox" id="toggleShowExtraTabs" onchange="setShowExtraTabs(this.checked)" style="width:17px;height:17px;"> Hiện tab "🏭 Công nợ NCC" và "💸 Chi phí khác"
+    </label>
+  </div>
   <div class="card">
     <div class="card-title">🔒 Bảo mật — Khoá PIN màn hình</div>
     <div class="muted" style="font-size:12px;margin-bottom:10px;">Đặt mã PIN 4-6 số để yêu cầu nhập mỗi khi mở app trên bất kỳ thiết bị nào (đồng bộ qua Firebase). Bỏ trống + bấm "Tắt khoá" nếu không muốn khoá nữa.</div>
@@ -548,7 +682,12 @@ const CUSTOMERS_KEY = "sotong-customers-v1";
 const FEETYPES_KEY = "sotong-feetypes-v1";
 const DEALER_SALES_KEY = "sotong-dealer-sales-v1";
 const DEALER_OPENING_KEY = "sotong-dealer-opening-v1";
+const NCC_OPENING_KEY = "sotong-ncc-opening-v1";
 const SPLIT_PAY_KEY = "sotong-split-pay-v1";
+const SUPPLIERS_KEY = "sotong-suppliers-v1";
+const SUPPLIER_DEBTS_KEY = "sotong-supplier-debts-v1";
+const SUPPLIER_PAYMENTS_KEY = "sotong-supplier-payments-v1";
+const EXTRA_COSTS_KEY = "sotong-extra-costs-v1";
 const PIN_LOCAL_KEY = "sotong-app-pin";
 const DEFAULT_DEALER_ROWS = 10;
 const DEFAULT_FEE_ROWS = 5;
@@ -556,6 +695,7 @@ const DEFAULT_DEDUCT_ROWS = 5;
 
 function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
 function todayKey(){ const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+function dateKeyOffset(daysAgo){ const d=new Date(); d.setDate(d.getDate()-daysAgo); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
 function yesterdayKey(){ const d=new Date(); d.setDate(d.getDate()-1); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
 function loadJSON(key, fallback){ try{ const v=localStorage.getItem(key); return v?JSON.parse(v):fallback; }catch(e){ return fallback; } }
 function formatNumber(n){ return (Number(n)||0).toLocaleString("en-US"); }
@@ -764,13 +904,20 @@ let customers = loadJSON(CUSTOMERS_KEY, []);
 let feeTypes = loadJSON(FEETYPES_KEY, []);
 let dealerSales = loadJSON(DEALER_SALES_KEY, []);
 let dealerOpeningBalances = loadJSON(DEALER_OPENING_KEY, {});
+let nccOpeningBalances = loadJSON(NCC_OPENING_KEY, {});
 let splitPayments = loadJSON(SPLIT_PAY_KEY, []);
+let suppliers = loadJSON(SUPPLIERS_KEY, []);
+let supplierDebts = loadJSON(SUPPLIER_DEBTS_KEY, []);
+let supplierPayments = loadJSON(SUPPLIER_PAYMENTS_KEY, []);
+let extraCosts = loadJSON(EXTRA_COSTS_KEY, []);
 let appPin = localStorage.getItem(PIN_LOCAL_KEY) || '';
 let currentSheetId = null;
 let dealerRows = [];
 let feeRows = [];
 let deductRows = [];
 let ddlEntryRows = [];
+let nccEntryRows = [];
+let nccPaymentRows = [];
 let splitPayRows = [];
 
 function saveAll(){
@@ -780,7 +927,12 @@ function saveAll(){
   localStorage.setItem(FEETYPES_KEY, JSON.stringify(feeTypes));
   localStorage.setItem(DEALER_SALES_KEY, JSON.stringify(dealerSales));
   localStorage.setItem(DEALER_OPENING_KEY, JSON.stringify(dealerOpeningBalances));
+  localStorage.setItem(NCC_OPENING_KEY, JSON.stringify(nccOpeningBalances));
   localStorage.setItem(SPLIT_PAY_KEY, JSON.stringify(splitPayments));
+  localStorage.setItem(SUPPLIERS_KEY, JSON.stringify(suppliers));
+  localStorage.setItem(SUPPLIER_DEBTS_KEY, JSON.stringify(supplierDebts));
+  localStorage.setItem(SUPPLIER_PAYMENTS_KEY, JSON.stringify(supplierPayments));
+  localStorage.setItem(EXTRA_COSTS_KEY, JSON.stringify(extraCosts));
   cloudSync();
 }
 
@@ -805,6 +957,10 @@ const COLLECTIONS = {
   feeTypes: () => feeTypes,
   dealerSales: () => dealerSales,
   splitPayments: () => splitPayments,
+  suppliers: () => suppliers,
+  supplierDebts: () => supplierDebts,
+  supplierPayments: () => supplierPayments,
+  extraCosts: () => extraCosts,
 };
 const COLLECTION_SETTERS = {
   sheets: (v)=>{ sheets = v; },
@@ -813,11 +969,16 @@ const COLLECTION_SETTERS = {
   feeTypes: (v)=>{ feeTypes = v; },
   dealerSales: (v)=>{ dealerSales = v; },
   splitPayments: (v)=>{ splitPayments = v; },
+  suppliers: (v)=>{ suppliers = v; },
+  supplierDebts: (v)=>{ supplierDebts = v; },
+  supplierPayments: (v)=>{ supplierPayments = v; },
+  extraCosts: (v)=>{ extraCosts = v; },
 };
 const COLLECTION_LOCALKEYS = {
   sheets: SHEETS_KEY, dealers: DEALERS_KEY, customers: CUSTOMERS_KEY, feeTypes: FEETYPES_KEY, dealerSales: DEALER_SALES_KEY, splitPayments: SPLIT_PAY_KEY,
+  suppliers: SUPPLIERS_KEY, supplierDebts: SUPPLIER_DEBTS_KEY, supplierPayments: SUPPLIER_PAYMENTS_KEY, extraCosts: EXTRA_COSTS_KEY,
 };
-let lastSyncedCloud = { sheets:[], dealers:[], customers:[], feeTypes:[], dealerSales:[], splitPayments:[], dealerOpeningBalances:null, appPin:'' };
+let lastSyncedCloud = { sheets:[], dealers:[], customers:[], feeTypes:[], dealerSales:[], splitPayments:[], suppliers:[], supplierDebts:[], supplierPayments:[], extraCosts:[], dealerOpeningBalances:null, nccOpeningBalances:null, appPin:'' };
 let fsDb = null;
 let fsReady = false;
 let cloudSyncTimer = null;
@@ -837,6 +998,10 @@ function renderEverythingCloud(){
   if(document.getElementById('ddlLedgerWrap') && !document.getElementById('ddlLedgerSection').classList.contains('hidden')) renderDdlLedger();
   if(document.getElementById('debtkhTableWrap') && !document.getElementById('debtkhTab').classList.contains('hidden')) renderDebtKhTable();
   if(document.getElementById('canDoiWrap') && !document.getElementById('candoiTab').classList.contains('hidden')) renderCanDoi();
+  if(document.getElementById('supplierListWrap')) renderSuppliers();
+  if(document.getElementById('nccPaymentHistoryWrap') && !document.getElementById('nccTab').classList.contains('hidden')) renderNccPaymentHistory();
+  if(document.getElementById('nccLedgerWrap') && !document.getElementById('nccTab').classList.contains('hidden')) renderNccLedger();
+  if(document.getElementById('extraCostListWrap') && !document.getElementById('extraCostTab').classList.contains('hidden')) renderExtraCostList();
   updateAllSuggestions();
 }
 
@@ -865,8 +1030,10 @@ async function cloudInit(){
       if(settingsDoc.exists){
         const sd = settingsDoc.data();
         if(sd.dealerOpeningBalances) dealerOpeningBalances = sd.dealerOpeningBalances;
+        if(sd.nccOpeningBalances) nccOpeningBalances = sd.nccOpeningBalances;
       }
       localStorage.setItem(DEALER_OPENING_KEY, JSON.stringify(dealerOpeningBalances));
+      localStorage.setItem(NCC_OPENING_KEY, JSON.stringify(nccOpeningBalances));
       renderEverythingCloud();
     }
     if(settingsDoc.exists){
@@ -880,7 +1047,8 @@ async function cloudInit(){
     lastSyncedCloud = {
       sheets: deepCopy(sheets), dealers: deepCopy(dealers), customers: deepCopy(customers),
       feeTypes: deepCopy(feeTypes), dealerSales: deepCopy(dealerSales), splitPayments: deepCopy(splitPayments),
-      dealerOpeningBalances: deepCopy(dealerOpeningBalances), appPin: appPin,
+      suppliers: deepCopy(suppliers), supplierDebts: deepCopy(supplierDebts), supplierPayments: deepCopy(supplierPayments), extraCosts: deepCopy(extraCosts),
+      dealerOpeningBalances: deepCopy(dealerOpeningBalances), nccOpeningBalances: deepCopy(nccOpeningBalances), appPin: appPin,
     };
     fsReady = true;
     await ensureNcoPseudoCustomers();
@@ -916,6 +1084,12 @@ function attachRealtimeListeners(){
         localStorage.setItem(DEALER_OPENING_KEY, JSON.stringify(dealerOpeningBalances));
         renderEverythingCloud();
       }
+      if(sd.nccOpeningBalances){
+        nccOpeningBalances = sd.nccOpeningBalances;
+        lastSyncedCloud.nccOpeningBalances = deepCopy(nccOpeningBalances);
+        localStorage.setItem(NCC_OPENING_KEY, JSON.stringify(nccOpeningBalances));
+        renderEverythingCloud();
+      }
       if(sd.appPin!==undefined && sd.appPin!==appPin){
         appPin = sd.appPin;
         lastSyncedCloud.appPin = appPin;
@@ -947,7 +1121,7 @@ async function syncNowCloud(){
       });
       prevMap.forEach((item,id)=>{ if(!currentMap.has(id)) allWrites.push({ col:name, id, op:'delete' }); });
     });
-    const settingsChanged = JSON.stringify(lastSyncedCloud.dealerOpeningBalances)!==JSON.stringify(dealerOpeningBalances) || lastSyncedCloud.appPin!==appPin;
+    const settingsChanged = JSON.stringify(lastSyncedCloud.dealerOpeningBalances)!==JSON.stringify(dealerOpeningBalances) || JSON.stringify(lastSyncedCloud.nccOpeningBalances)!==JSON.stringify(nccOpeningBalances) || lastSyncedCloud.appPin!==appPin;
 
     for(let i=0; i<allWrites.length; i+=400){
       const batch = fsDb.batch();
@@ -958,24 +1132,40 @@ async function syncNowCloud(){
       await batch.commit();
     }
     if(settingsChanged){
-      await fsDb.collection("settings").doc("app").set({ dealerOpeningBalances, appPin }, { merge:true });
+      await fsDb.collection("settings").doc("app").set({ dealerOpeningBalances, nccOpeningBalances, appPin }, { merge:true });
     }
     lastSyncedCloud = {
       sheets: deepCopy(sheets), dealers: deepCopy(dealers), customers: deepCopy(customers),
       feeTypes: deepCopy(feeTypes), dealerSales: deepCopy(dealerSales), splitPayments: deepCopy(splitPayments),
-      dealerOpeningBalances: deepCopy(dealerOpeningBalances), appPin: appPin,
+      suppliers: deepCopy(suppliers), supplierDebts: deepCopy(supplierDebts), supplierPayments: deepCopy(supplierPayments), extraCosts: deepCopy(extraCosts),
+      dealerOpeningBalances: deepCopy(dealerOpeningBalances), nccOpeningBalances: deepCopy(nccOpeningBalances), appPin: appPin,
     };
     updateCloudStatus("synced");
   }catch(e){ console.error("Lỗi đồng bộ Firebase", e); updateCloudStatus("error"); }
 }
 
 
+const SHOW_EXTRA_TABS_KEY = "sotong-show-extra-tabs";
+let showExtraTabs = localStorage.getItem(SHOW_EXTRA_TABS_KEY) === '1';
+function setShowExtraTabs(val){
+  showExtraTabs = val;
+  localStorage.setItem(SHOW_EXTRA_TABS_KEY, val ? '1' : '0');
+  applyExtraTabsVisibility();
+}
+function applyExtraTabsVisibility(){
+  document.getElementById('tabBtnNcc').classList.toggle('hidden', !showExtraTabs);
+  document.getElementById('tabBtnExtraCost').classList.toggle('hidden', !showExtraTabs);
+  const box = document.getElementById('toggleShowExtraTabs');
+  if(box) box.checked = showExtraTabs;
+}
 function switchTab(tab){
   document.getElementById('sheetTab').classList.toggle('hidden', tab!=='sheet');
   document.getElementById('historyTab').classList.toggle('hidden', tab!=='history');
   document.getElementById('customersTab').classList.toggle('hidden', tab!=='customers');
   document.getElementById('debtkhTab').classList.toggle('hidden', tab!=='debtkh');
   document.getElementById('debtdlTab').classList.toggle('hidden', tab!=='debtdl');
+  document.getElementById('nccTab').classList.toggle('hidden', tab!=='ncc');
+  document.getElementById('extraCostTab').classList.toggle('hidden', tab!=='extracost');
   document.getElementById('candoiTab').classList.toggle('hidden', tab!=='candoi');
   document.getElementById('settingsTab').classList.toggle('hidden', tab!=='settings');
   const isCreateGroup = (tab==='sheet' || tab==='history' || tab==='customers');
@@ -986,6 +1176,8 @@ function switchTab(tab){
   document.getElementById('tabBtnCustomers').classList.toggle('active', tab==='customers');
   document.getElementById('tabBtnDebtKH').classList.toggle('active', tab==='debtkh');
   document.getElementById('tabBtnDebtDL').classList.toggle('active', tab==='debtdl');
+  document.getElementById('tabBtnNcc').classList.toggle('active', tab==='ncc');
+  document.getElementById('tabBtnExtraCost').classList.toggle('active', tab==='extracost');
   document.getElementById('tabBtnCanDoi').classList.toggle('active', tab==='candoi');
   document.getElementById('tabBtnSettings').classList.toggle('active', tab==='settings');
   if(tab==='history'){
@@ -998,6 +1190,14 @@ function switchTab(tab){
   if(tab==='customers') { renderDealers(); renderCustomers(); renderFeeTypes(); }
   if(tab==='debtkh') { populateDebtKhCustomerSelect(); renderDebtKhTable(); }
   if(tab==='debtdl') { setDdlSection('entry'); }
+  if(tab==='ncc') { setNccSection('entry'); }
+  if(tab==='extracost') {
+    if(!document.getElementById('ecFrom').value && !document.getElementById('ecTo').value && ecQuickFilterMode==='month'){
+      setExtraCostQuickFilter('month');
+    } else {
+      renderExtraCostList();
+    }
+  }
   if(tab==='candoi') { renderCanDoi(); }
   if(tab==='settings') { updatePinStatusBox(); }
   updateStickyOffsets();
@@ -1053,7 +1253,7 @@ function downloadBackupJson(){
   const backup = {
     exportedAt: new Date().toISOString(),
     app: 'So Thu Chi Tong - 4 Cong Ty',
-    sheets, dealers, customers, feeTypes, dealerSales, splitPayments, dealerOpeningBalances,
+    sheets, dealers, customers, feeTypes, dealerSales, splitPayments, dealerOpeningBalances, nccOpeningBalances, suppliers, supplierDebts, supplierPayments, extraCosts,
   };
   const blob = new Blob([JSON.stringify(backup, null, 2)], { type:'application/json' });
   const url = URL.createObjectURL(blob);
@@ -1080,6 +1280,11 @@ function restoreFromBackupFile(e){
     dealerSales = data.dealerSales || [];
     splitPayments = data.splitPayments || [];
     dealerOpeningBalances = data.dealerOpeningBalances || {};
+    nccOpeningBalances = data.nccOpeningBalances || {};
+    suppliers = data.suppliers || [];
+    supplierDebts = data.supplierDebts || [];
+    supplierPayments = data.supplierPayments || [];
+    extraCosts = data.extraCosts || [];
     saveAll();
     renderEverythingCloud();
     e.target.value = '';
@@ -2427,12 +2632,32 @@ function renderDdlList(){
 
 // --- Chia tiền (chọn khách hàng để chi cho đại lý) ---
 let ddlPayView = 'unpaid';
+let ddlPayPaidFilterMode = 'today';
+function setDdlPayPaidFilter(mode){
+  ddlPayPaidFilterMode = mode;
+  document.querySelectorAll('.ddl-paid-qf').forEach(b=> b.classList.toggle('active', b.dataset.mode===mode));
+  if(mode!=='custom') document.getElementById('ddlPayPaidFromDate').value = '';
+  renderDdlPayList();
+}
+function ddlPayPaidDateInRange(dateStr){
+  if(!dateStr) return ddlPayPaidFilterMode==='all';
+  if(ddlPayPaidFilterMode==='all') return true;
+  if(ddlPayPaidFilterMode==='today') return dateStr===todayKey();
+  if(ddlPayPaidFilterMode==='yesterday') return dateStr===dateKeyOffset(1);
+  if(ddlPayPaidFilterMode==='daybefore') return dateStr===dateKeyOffset(2);
+  if(ddlPayPaidFilterMode==='custom'){
+    const from = document.getElementById('ddlPayPaidFromDate')?.value;
+    return !from || dateStr>=from;
+  }
+  return true;
+}
 function setDdlPayView(v){
   ddlPayView = v;
   document.getElementById('ddlPayViewUnpaidBtn').classList.toggle('active', v==='unpaid');
   document.getElementById('ddlPayViewPaidBtn').classList.toggle('active', v==='paid');
   document.getElementById('ddlPayConfirmCard').classList.toggle('hidden', v!=='unpaid');
-  renderDdlPayList();
+  document.getElementById('ddlPayPaidFilterBar').classList.toggle('hidden', v!=='paid');
+  if(v==='paid') setDdlPayPaidFilter('today'); else renderDdlPayList();
 }
 function viewDdlSaleDetail(id){
   const x = dealerSales.find(s=>s.id===id);
@@ -2471,10 +2696,11 @@ function renderDdlPayList(){
   const totalBox = document.getElementById('ddlPayTotalOwedBox');
 
   if(ddlPayView==='paid'){
-    const paidList = dealerSales.filter(x=> (!customer||x.customer===customer) && x.paid && (!dealerFilter || x.dealer===dealerFilter)).sort((a,b)=> (b.paidDate||'').localeCompare(a.paidDate||''));
+    const paidList = dealerSales.filter(x=> (!customer||x.customer===customer) && x.paid && (!dealerFilter || x.dealer===dealerFilter) && ddlPayPaidDateInRange(x.paidDate||x.date)).sort((a,b)=> (b.paidDate||'').localeCompare(a.paidDate||''));
     const totalPaid = paidList.reduce((s,x)=>s+x.amount,0);
     totalBox.style.background = '#E5F2EB'; totalBox.style.color = 'var(--moss)';
-    totalBox.textContent = `✅ Tổng đã chi${customer?' — '+customer:' (tất cả KH)'}${dealerFilter?' ('+dealerFilter+')':''}: ${formatNumber(totalPaid)} đ`;
+    const filterLabel = {today:'Hôm nay', yesterday:'Hôm qua', daybefore:'Hôm kia', all:'Tất cả', custom:'Từ '+(document.getElementById('ddlPayPaidFromDate')?.value?formatDateVN(document.getElementById('ddlPayPaidFromDate').value):'…')}[ddlPayPaidFilterMode];
+    totalBox.textContent = `✅ Tổng đã chi (${filterLabel})${customer?' — '+customer:' (tất cả KH)'}${dealerFilter?' ('+dealerFilter+')':''}: ${formatNumber(totalPaid)} đ`;
     if(paidList.length===0){ wrap.innerHTML = `<div class="empty-state">Chưa có khoản nào đã chi phù hợp bộ lọc</div>`; return; }
     // Tính tổng theo từng nhóm (cùng khách hàng + cùng ngày chi) để hiện vào cột Ghi chú
     const groupTotals = {};
@@ -2918,6 +3144,497 @@ function exportDdlPayListExcel(){
   XLSX.utils.book_append_sheet(wb, ws, "Tra tien DL");
   XLSX.writeFile(wb, `tra-tien-dai-ly-${todayKey()}.xlsx`);
 }
+
+// ===== CÔNG NỢ NHÀ CUNG CẤP (NCC) =====
+let nccSection = 'entry';
+let nccPayPaidFilterMode = 'today';
+
+function setNccSection(s){
+  nccSection = s;
+  document.getElementById('nccBtnEntry').classList.toggle('active', s==='entry');
+  document.getElementById('nccBtnList').classList.toggle('active', s==='list');
+  document.getElementById('nccBtnLedger').classList.toggle('active', s==='ledger');
+  document.getElementById('nccEntrySection').classList.toggle('hidden', s!=='entry');
+  document.getElementById('nccListSection').classList.toggle('hidden', s!=='list');
+  document.getElementById('nccLedgerSection').classList.toggle('hidden', s!=='ledger');
+  if(s==='entry'){
+    populateSupplierSelects();
+    if(nccEntryRows.length===0) initNccEntryRows();
+    if(nccPaymentRows.length===0) initNccPaymentRows();
+    renderNccEntryTable();
+    renderNccPaymentTable();
+    renderNccPaymentHistory();
+  }
+  if(s==='list') renderSuppliers();
+  if(s==='ledger'){ populateNccLedgerSupplierSelect(); onNccLedgerSupplierChange(); }
+}
+function populateSupplierSelects(){
+  const bl = document.getElementById('nccBuyerList');
+  if(bl){
+    const names = [...new Set(supplierDebts.map(x=>x.nguoiMua).filter(Boolean))];
+    bl.innerHTML = names.map(n=>`<option value="${escapeHtml(n)}"></option>`).join('');
+  }
+}
+function addSupplier(){
+  const name = document.getElementById('newSupplierName').value.trim();
+  const note = document.getElementById('newSupplierNote').value.trim();
+  if(!name){ alert("Nhập tên nhà cung cấp"); return; }
+  if(suppliers.some(s=>s.name===name)){ alert("Nhà cung cấp này đã có"); return; }
+  suppliers.push({ id: uid(), name, note });
+  document.getElementById('newSupplierName').value = '';
+  document.getElementById('newSupplierNote').value = '';
+  saveAll();
+  renderSuppliers();
+  populateSupplierSelects();
+  renderNccEntryTable();
+}
+function deleteSupplier(id, btn){
+  if(!requestConfirm('delsup:'+id, btn, '⚠️ Bấm lần nữa để XOÁ')) return;
+  suppliers = suppliers.filter(s=>s.id!==id);
+  saveAll();
+  renderSuppliers();
+  populateSupplierSelects();
+  renderNccEntryTable();
+}
+function renderSuppliers(){
+  const wrap = document.getElementById('supplierListWrap');
+  if(!wrap) return;
+  if(suppliers.length===0){ wrap.innerHTML = `<div class="empty-state">Chưa có nhà cung cấp nào</div>`; return; }
+  const body = suppliers.map(s=>{
+    const totalDebt = supplierDebts.filter(x=>x.supplier===s.name).reduce((sum,x)=>sum+x.amount,0);
+    const totalPaid = supplierPayments.filter(x=>x.supplier===s.name).reduce((sum,x)=>sum+x.amount,0);
+    const owed = totalDebt - totalPaid;
+    return `
+    <tr>
+      <td style="text-align:left;padding:6px 8px;font-weight:700;">${escapeHtml(s.name)}</td>
+      <td style="text-align:left;padding:6px 8px;">${escapeHtml(s.note||'')}</td>
+      <td class="readonly" style="color:${owed>0?'var(--rust)':'var(--moss)'};font-weight:700;">${formatNumber(owed)}</td>
+      <td><button class="del-row-btn" onclick="deleteSupplier('${s.id}', this)">🗑</button></td>
+    </tr>`;
+  }).join('');
+  wrap.innerHTML = `
+    <table class="grid">
+      <thead><tr><th>Nhà cung cấp</th><th>Ghi chú</th><th style="width:150px;">Đang nợ</th><th style="width:50px;"></th></tr></thead>
+      <tbody>${body}</tbody>
+    </table>`;
+}
+
+// --- Nhập liệu NCC (nhiều dòng, giống Nhập liệu Đại Lý) ---
+function emptyNccEntryRow(){ return { id: uid(), date: todayKey(), supplier:'', nguoiMua:'', noiDung:'', amount:'', note:'' }; }
+function initNccEntryRows(){ nccEntryRows = Array.from({length:3}, emptyNccEntryRow); }
+function addNccEntryRow(){ nccEntryRows.push(emptyNccEntryRow()); renderNccEntryTable(); }
+function removeNccEntryRow(id){ nccEntryRows = nccEntryRows.filter(r=>r.id!==id); renderNccEntryTable(); }
+function renderNccEntryTable(){
+  const tbody = document.getElementById('nccEntryTbody');
+  if(!tbody) return;
+  tbody.innerHTML = nccEntryRows.map(r=>`
+    <tr>
+      <td><input type="date" class="ncc-entry-field" data-field="date" data-id="${r.id}" value="${r.date}" style="font-size:12px;padding:6px 3px;"></td>
+      <td><select class="ncc-entry-field" data-field="supplier" data-id="${r.id}">${buildSelectOptions(suppliers, r.supplier, '-- Chọn --', true)}</select></td>
+      <td><input type="text" class="ncc-entry-field" data-field="nguoiMua" data-id="${r.id}" value="${escapeHtml(r.nguoiMua)}" list="nccBuyerList" placeholder="Tên người mua"></td>
+      <td><input type="text" class="txt-left ncc-entry-field" data-field="noiDung" data-id="${r.id}" value="${escapeHtml(r.noiDung)}" placeholder="VD: Vật tư cơ điện"></td>
+      <td><input type="text" class="ncc-entry-field ncc-entry-num" data-field="amount" data-id="${r.id}" value="${escapeHtml(formatDisplayNumber(r.amount))}" inputmode="decimal" style="font-size:16px;font-weight:700;"></td>
+      <td><input type="text" class="txt-left ncc-entry-field" data-field="note" data-id="${r.id}" value="${escapeHtml(r.note)}"></td>
+      <td><button class="del-row-btn" onclick="removeNccEntryRow('${r.id}')">🗑</button></td>
+    </tr>
+  `).join('');
+  document.querySelectorAll('.ncc-entry-field').forEach(el=>{
+    const isNum = el.classList.contains('ncc-entry-num');
+    const handler = (e)=>{
+      const row = nccEntryRows.find(r=>r.id===e.target.dataset.id);
+      if(!row) return;
+      if(isNum){ handleFormattedNumberInput(e, nccEntryRows); }
+      else{ row[e.target.dataset.field] = e.target.value; }
+      updateNccEntryTotal();
+    };
+    el.oninput = handler;
+    el.onchange = handler;
+    if(isNum) el.onblur = forceReformatNumberField;
+  });
+  attachGridArrowNav('nccEntryTbody', ['nguoiMua','noiDung','amount','note']);
+  updateNccEntryTotal();
+}
+function updateNccEntryTotal(){
+  const box = document.getElementById('nccEntryTotalBox');
+  if(!box) return;
+  const total = nccEntryRows.reduce((s,r)=> s + (Number(rawNumberString(r.amount))||0), 0);
+  box.textContent = `Tổng: ${formatNumber(total)} đ`;
+}
+function saveNccEntries(){
+  const valid = nccEntryRows.filter(r=> r.supplier && Number(rawNumberString(r.amount))>0);
+  if(valid.length===0){ alert("Chưa có dòng nào đủ thông tin (cần chọn Nhà cung cấp và nhập Số tiền)"); return; }
+  valid.forEach(r=>{
+    supplierDebts.push({ id: uid(), date: r.date, supplier: r.supplier, nguoiMua: r.nguoiMua.trim(), noiDung: r.noiDung.trim(), amount: Number(rawNumberString(r.amount)), note: r.note.trim(), paid:false, paidDate:null });
+  });
+  saveAll();
+  initNccEntryRows();
+  renderNccEntryTable();
+  populateSupplierSelects();
+  renderNccPaymentHistory();
+  alert(`Đã lưu ${valid.length} khoản nợ nhà cung cấp.`);
+}
+// --- Ghi nhận khoản đã trả NCC (đơn giản: Ngày / Nhà cung cấp / Số tiền, không cần khớp từng khoản mua) ---
+function emptyNccPaymentRow(){ return { id: uid(), date: todayKey(), supplier:'', amount:'' }; }
+function initNccPaymentRows(){ nccPaymentRows = Array.from({length:3}, emptyNccPaymentRow); }
+function addNccPaymentRow(){ nccPaymentRows.push(emptyNccPaymentRow()); renderNccPaymentTable(); }
+function removeNccPaymentRow(id){ nccPaymentRows = nccPaymentRows.filter(r=>r.id!==id); renderNccPaymentTable(); }
+function renderNccPaymentTable(){
+  const tbody = document.getElementById('nccPaymentTbody');
+  if(!tbody) return;
+  tbody.innerHTML = nccPaymentRows.map(r=>`
+    <tr>
+      <td><input type="date" class="ncc-pmt-field" data-field="date" data-id="${r.id}" value="${r.date}" style="font-size:12px;padding:6px 3px;"></td>
+      <td><select class="ncc-pmt-field" data-field="supplier" data-id="${r.id}">${buildSelectOptions(suppliers, r.supplier, '-- Chọn --', true)}</select></td>
+      <td><input type="text" class="ncc-pmt-field ncc-pmt-num" data-field="amount" data-id="${r.id}" value="${escapeHtml(formatDisplayNumber(r.amount))}" inputmode="decimal" style="font-size:16px;font-weight:700;"></td>
+      <td><button class="del-row-btn" onclick="removeNccPaymentRow('${r.id}')">🗑</button></td>
+    </tr>
+  `).join('');
+  document.querySelectorAll('.ncc-pmt-field').forEach(el=>{
+    const isNum = el.classList.contains('ncc-pmt-num');
+    const handler = (e)=>{
+      const row = nccPaymentRows.find(r=>r.id===e.target.dataset.id);
+      if(!row) return;
+      if(isNum){ handleFormattedNumberInput(e, nccPaymentRows); }
+      else{ row[e.target.dataset.field] = e.target.value; }
+      updateNccPaymentTotal();
+    };
+    el.oninput = handler;
+    el.onchange = handler;
+    if(isNum) el.onblur = forceReformatNumberField;
+  });
+  attachGridArrowNav('nccPaymentTbody', ['amount']);
+  updateNccPaymentTotal();
+}
+function updateNccPaymentTotal(){
+  const box = document.getElementById('nccPaymentTotalBox');
+  if(!box) return;
+  const total = nccPaymentRows.reduce((s,r)=> s + (Number(rawNumberString(r.amount))||0), 0);
+  box.textContent = `Tổng: ${formatNumber(total)} đ`;
+}
+function saveNccPayments(){
+  const valid = nccPaymentRows.filter(r=> r.supplier && Number(rawNumberString(r.amount))>0);
+  if(valid.length===0){ alert("Chưa có dòng nào đủ thông tin (cần chọn Nhà cung cấp và nhập Số tiền)"); return; }
+  valid.forEach(r=>{
+    supplierPayments.push({ id: uid(), date: r.date, supplier: r.supplier, amount: Number(rawNumberString(r.amount)) });
+  });
+  saveAll();
+  initNccPaymentRows();
+  renderNccPaymentTable();
+  renderNccPaymentHistory();
+  renderSuppliers();
+  alert(`Đã ghi nhận ${valid.length} khoản đã trả.`);
+}
+function deleteNccPayment(id, btn){
+  if(!requestConfirm('delnccpmt:'+id, btn, '⚠️ Bấm lần nữa để XOÁ')) return;
+  supplierPayments = supplierPayments.filter(x=>x.id!==id);
+  saveAll();
+  renderNccPaymentHistory();
+  renderSuppliers();
+  renderNccLedger();
+}
+function renderNccPaymentHistory(){
+  const wrap = document.getElementById('nccPaymentHistoryWrap');
+  if(!wrap) return;
+  const list = supplierPayments.slice().sort((a,b)=> b.date.localeCompare(a.date)).slice(0,30);
+  if(list.length===0){ wrap.innerHTML = `<div class="empty-state">Chưa có khoản nào đã trả</div>`; return; }
+  const body = list.map(x=>`
+    <tr>
+      <td class="readonly">${formatDateVN(x.date)}</td>
+      <td style="text-align:left;padding:6px 8px;font-weight:700;">${escapeHtml(x.supplier)}</td>
+      <td class="readonly" style="color:var(--moss);">${formatNumber(x.amount)}</td>
+      <td><button class="del-row-btn" onclick="deleteNccPayment('${x.id}', this)">🗑</button></td>
+    </tr>`).join('');
+  wrap.innerHTML = `
+    <table class="grid">
+      <thead><tr><th style="width:100px;">Ngày</th><th>Nhà cung cấp</th><th style="width:150px;">Số tiền</th><th style="width:50px;"></th></tr></thead>
+      <tbody>${body}</tbody>
+    </table>`;
+}
+
+
+// ===== SỔ CHI TIẾT NCC (chuẩn kế toán: phát sinh / đã trả / luỹ kế) =====
+function populateNccLedgerSupplierSelect(){
+  const el = document.getElementById('nccLedgerSupplier');
+  if(!el) return;
+  const cur = el.value;
+  el.innerHTML = `<option value="__ALL__">-- Tất cả nhà cung cấp --</option>` +
+    suppliers.map(s=>`<option value="${escapeHtml(s.name)}">${escapeHtml(s.name)}</option>`).join('');
+  if(cur) el.value = cur;
+}
+function onNccLedgerSupplierChange(){
+  const supplier = document.getElementById('nccLedgerSupplier').value;
+  const isAll = supplier==='__ALL__';
+  document.getElementById('nccLedgerOpeningRow').classList.toggle('hidden', isAll);
+  if(!isAll){
+    const opening = nccOpeningBalances[supplier] || 0;
+    document.getElementById('nccLedgerOpening').value = formatDisplayNumber(opening);
+  }
+  renderNccLedger();
+}
+function saveNccOpeningBalance(){
+  const supplier = document.getElementById('nccLedgerSupplier').value;
+  if(!supplier || supplier==='__ALL__') return;
+  const val = Number(rawNumberString(document.getElementById('nccLedgerOpening').value)) || 0;
+  nccOpeningBalances[supplier] = val;
+  saveAll();
+  renderNccLedger();
+}
+function clearNccLedgerDateFilter(){
+  document.getElementById('nccLedgerFrom').value = '';
+  document.getElementById('nccLedgerTo').value = '';
+  renderNccLedger();
+}
+// Luỹ kế luôn tính từ đầu (toàn bộ lịch sử + số dư đầu kỳ), lọc ngày chỉ ẩn bớt dòng hiển thị
+function buildSupplierLedger(supplier){
+  const opening = nccOpeningBalances[supplier] || 0;
+  const items = supplierDebts.filter(x=>x.supplier===supplier);
+  const payments = supplierPayments.filter(x=>x.supplier===supplier);
+  const rows = [];
+  if(opening){
+    const earliestDate = items.length ? items.map(x=>x.date).sort()[0] : todayKey();
+    rows.push({ date: earliestDate, note: "Số dư đầu kỳ (chuyển từ sổ cũ)", phatSinh: opening, daChi: 0, sortKey: 0, debtId: null, paymentId: null });
+  }
+  items.forEach(x=>{
+    const name = x.noiDung || '(không ghi nội dung)';
+    const nguoiMuaTxt = x.nguoiMua? ` (${x.nguoiMua})` : '';
+    rows.push({ date: x.date, note: `${name}${nguoiMuaTxt}`, phatSinh: x.amount, daChi: 0, sortKey: 1, debtId: x.id, paymentId: null });
+  });
+  payments.forEach(p=>{
+    rows.push({ date: p.date, note: "Đã trả", phatSinh: 0, daChi: p.amount, sortKey: 2, debtId: null, paymentId: p.id });
+  });
+  rows.sort((a,b)=> a.date===b.date ? a.sortKey-b.sortKey : a.date.localeCompare(b.date));
+  let luyKe = 0;
+  rows.forEach(r=>{ luyKe += r.phatSinh - r.daChi; r.luyKe = luyKe; });
+  return rows;
+}
+function buildAllSuppliersLedger(){
+  let rows = [];
+  suppliers.forEach(s=>{
+    buildSupplierLedger(s.name).forEach(r=> rows.push({ ...r, note: `[${s.name}] ${r.note}` }));
+  });
+  rows.sort((a,b)=> a.date===b.date ? a.sortKey-b.sortKey : a.date.localeCompare(b.date));
+  let luyKe = 0;
+  rows.forEach(r=>{ luyKe += r.phatSinh - r.daChi; r.luyKe = luyKe; });
+  return rows;
+}
+function getFilteredNccLedgerRows(supplier){
+  const from = document.getElementById('nccLedgerFrom')?.value;
+  const to = document.getElementById('nccLedgerTo')?.value;
+  const all = supplier==='__ALL__' ? buildAllSuppliersLedger() : buildSupplierLedger(supplier);
+  return all.filter(r=> (!from || r.date>=from) && (!to || r.date<=to));
+}
+function editSupplierDebtEntry(id){
+  const x = supplierDebts.find(d=>d.id===id);
+  if(!x) return;
+  const newAmountStr = prompt("Sửa số tiền:", x.amount);
+  if(newAmountStr===null) return;
+  const newAmount = Number(String(newAmountStr).replace(/[^\d]/g,''));
+  if(!newAmount){ alert("Số tiền không hợp lệ"); return; }
+  const newNote = prompt("Sửa nội dung / mặt hàng:", x.noiDung||'');
+  if(newNote===null) return;
+  x.amount = newAmount;
+  x.noiDung = newNote.trim();
+  saveAll();
+  renderNccLedger();
+  renderSuppliers();
+  renderNccPaymentHistory();
+  alert("Đã cập nhật khoản nợ.");
+}
+function deleteSupplierDebtEntry(id, btn){
+  if(!requestConfirm('delsupdebt:'+id, btn, '⚠️ Bấm lần nữa để XOÁ')) return;
+  supplierDebts = supplierDebts.filter(x=>x.id!==id);
+  saveAll();
+  renderNccLedger();
+  renderSuppliers();
+  renderNccPaymentHistory();
+}
+function renderNccLedger(){
+  const wrap = document.getElementById('nccLedgerWrap');
+  if(!wrap) return;
+  const supplier = document.getElementById('nccLedgerSupplier')?.value;
+  if(!supplier){ wrap.innerHTML = `<div class="empty-state">Chưa có nhà cung cấp để hiển thị</div>`; return; }
+  const rows = getFilteredNccLedgerRows(supplier);
+  if(rows.length===0){ wrap.innerHTML = `<div class="empty-state">Không có dữ liệu trong khoảng ngày đã chọn</div>`; return; }
+  const tongPhatSinh = rows.reduce((s,r)=>s+r.phatSinh,0);
+  const tongDaChi = rows.reduce((s,r)=>s+r.daChi,0);
+  const soDuHienTai = rows[rows.length-1].luyKe;
+  const body = rows.map((r,i)=>`
+    <tr>
+      <td class="readonly">${i+1}</td>
+      <td style="text-align:left;padding:6px 8px;">${formatDateVN(r.date)} — ${escapeHtml(r.note)}</td>
+      <td class="readonly" style="color:${r.phatSinh?'var(--rust)':'inherit'};">${r.phatSinh?formatNumber(r.phatSinh):''}</td>
+      <td class="readonly" style="color:${r.daChi?'var(--moss)':'inherit'};">${r.daChi?formatNumber(r.daChi):''}</td>
+      <td class="readonly" style="font-weight:700;">${formatNumber(r.luyKe)}</td>
+      <td class="no-export">${r.debtId? `<button class="del-row-btn" onclick="editSupplierDebtEntry('${r.debtId}')">✏️</button><button class="del-row-btn" onclick="deleteSupplierDebtEntry('${r.debtId}', this)">🗑</button>` : ''}${r.paymentId? `<button class="del-row-btn" onclick="deleteNccPayment('${r.paymentId}', this)">🗑</button>` : ''}</td>
+    </tr>
+  `).join('');
+  wrap.innerHTML = `
+    <table class="grid" id="nccLedgerTable">
+      <thead><tr><th style="width:40px;">STT</th><th>DIỄN GIẢI</th><th style="width:130px;">PHÁT SINH</th><th style="width:130px;">ĐÃ TRẢ</th><th style="width:140px;">SỐ DƯ (LUỸ KẾ)</th><th class="no-export" style="width:80px;"></th></tr></thead>
+      <tbody>${body}
+        <tr class="sum-row"><td colspan="2">TỔNG (trong khoảng đã chọn)</td><td style="color:var(--rust);">${formatNumber(tongPhatSinh)}</td><td style="color:var(--moss);">${formatNumber(tongDaChi)}</td><td></td><td class="no-export"></td></tr>
+        <tr class="sum-row" style="background:#FFF6C9;"><td colspan="4" style="font-size:15px;">SỐ DƯ HIỆN TẠI</td><td style="font-size:16px;">${formatNumber(soDuHienTai)}</td><td class="no-export"></td></tr>
+      </tbody>
+    </table>
+  `;
+}
+function exportNccLedgerExcel(){
+  const supplier = document.getElementById('nccLedgerSupplier')?.value;
+  if(!supplier){ alert("Chọn nhà cung cấp trước"); return; }
+  const rows = getFilteredNccLedgerRows(supplier);
+  if(rows.length===0){ alert("Không có dữ liệu để xuất"); return; }
+  const tongPhatSinh = rows.reduce((s,r)=>s+r.phatSinh,0);
+  const tongDaChi = rows.reduce((s,r)=>s+r.daChi,0);
+  const label = supplier==='__ALL__' ? 'TẤT CẢ NHÀ CUNG CẤP' : supplier;
+  const aoa = [ [`SỔ CHI TIẾT NHÀ CUNG CẤP — ${label}`], [], ["STT","DIỄN GIẢI","PHÁT SINH","ĐÃ TRẢ","SỐ DƯ (LUỸ KẾ)"] ];
+  rows.forEach((r,i)=> aoa.push([i+1, `${formatDateVN(r.date)} — ${r.note}`, r.phatSinh||'', r.daChi||'', r.luyKe]));
+  aoa.push(["", "TỔNG", tongPhatSinh, tongDaChi, ""]);
+  aoa.push(["", "SỐ DƯ HIỆN TẠI", "", "", rows[rows.length-1].luyKe]);
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  ws['!cols'] = [{wch:6},{wch:44},{wch:16},{wch:16},{wch:16}];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "So chi tiet NCC");
+  XLSX.writeFile(wb, `so-chi-tiet-${label}-${todayKey()}.xlsx`);
+}
+function shareNccLedgerImage(){
+  const table = document.getElementById('nccLedgerTable');
+  if(!table){ alert("Chưa có dữ liệu để chia sẻ"); return; }
+  const supplier = document.getElementById('nccLedgerSupplier')?.value;
+  const label = supplier==='__ALL__' ? 'Tất cả nhà cung cấp' : supplier;
+  const container = document.createElement('div');
+  container.style.cssText = 'position:fixed;left:-9999px;top:0;background:#fff;padding:20px;width:900px;';
+  const clone = table.cloneNode(true);
+  clone.querySelectorAll('.no-export').forEach(n=>n.remove());
+  container.innerHTML = `<h2 style="text-align:center;margin:0 0 10px;">SỔ CHI TIẾT NHÀ CUNG CẤP — ${escapeHtml(label)}</h2>`;
+  container.appendChild(clone);
+  document.body.appendChild(container);
+  html2canvas(container, { backgroundColor:'#ffffff', scale:2 }).then(canvas=>{
+    container.remove();
+    canvas.toBlob(blob=>{
+      const file = new File([blob], `so-chi-tiet-${label}-${todayKey()}.png`, { type:'image/png' });
+      if(navigator.canShare && navigator.canShare({ files:[file] })){
+        navigator.share({ files:[file], title:'Sổ chi tiết NCC' }).catch(()=>{});
+      } else {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = file.name;
+        document.body.appendChild(a); a.click(); a.remove();
+        URL.revokeObjectURL(url);
+      }
+    }, 'image/png');
+  }).catch(err=>{ container.remove(); alert('Không tạo được ảnh: ' + String((err&&err.message)||err)); });
+}
+function printNccLedger(){
+  const table = document.getElementById('nccLedgerTable');
+  if(!table){ alert("Chưa có dữ liệu để in"); return; }
+  const supplier = document.getElementById('nccLedgerSupplier')?.value;
+  const label = supplier==='__ALL__' ? 'Tất cả nhà cung cấp' : supplier;
+  const clone = table.cloneNode(true);
+  clone.querySelectorAll('.no-export').forEach(n=>n.remove());
+  const html = `
+    <div class="print-sheet">
+      <h2 style="text-align:center;">SỔ CHI TIẾT NHÀ CUNG CẤP</h2>
+      <div class="sub" style="text-align:center;">${escapeHtml(label)}</div>
+      ${clone.outerHTML.replace('class="grid"','class="print-table"')}
+    </div>
+  `;
+  printHtmlInNewWindow(html, `So chi tiet NCC - ${label}`);
+}
+
+// ===== CHI PHÍ KHÁC (báo cáo tổng hợp phí đã nhập khi Lập phiếu: Phí GC, Thuê xe, Thuê code...) =====
+let ecQuickFilterMode = 'month';
+function setExtraCostQuickFilter(mode){
+  ecQuickFilterMode = mode;
+  document.getElementById('ecfAll').classList.toggle('active', mode==='all');
+  document.getElementById('ecfMonth').classList.toggle('active', mode==='month');
+  if(mode==='all'){
+    document.getElementById('ecFrom').value = '';
+    document.getElementById('ecTo').value = '';
+  } else if(mode==='month'){
+    const d = new Date();
+    const from = new Date(d.getFullYear(), d.getMonth(), 1).toISOString().slice(0,10);
+    const to = new Date(d.getFullYear(), d.getMonth()+1, 0).toISOString().slice(0,10);
+    document.getElementById('ecFrom').value = from;
+    document.getElementById('ecTo').value = to;
+  }
+  renderExtraCostList();
+}
+// Gom tất cả dòng "Phí" (feeRows) trong mọi phiếu đã lập, kèm ngày phiếu + tên khách hàng
+function getAllFeeEntries(){
+  const out = [];
+  sheets.forEach(s=>{
+    (s.feeRows||[]).forEach(r=>{
+      const amt = Number(r.amount)||0;
+      if(!r.name && !amt) return;
+      out.push({ date: s.date, loai: r.name||'(Không đặt tên)', amount: amt, khachHang: s.title||'' });
+    });
+  });
+  return out;
+}
+function getFilteredExtraCosts(){
+  const from = document.getElementById('ecFrom')?.value;
+  const to = document.getElementById('ecTo')?.value;
+  return getAllFeeEntries().filter(x=> (!from||x.date>=from) && (!to||x.date<=to)).sort((a,b)=> b.date.localeCompare(a.date));
+}
+function populateExtraCostLoaiFilter(list){
+  const el = document.getElementById('ecLoaiFilter');
+  if(!el) return;
+  const cur = el.value;
+  const loaiNames = [...new Set(list.map(x=>x.loai))].sort((a,b)=>a.localeCompare(b));
+  el.innerHTML = `<option value="">-- Tất cả loại phí --</option>` + loaiNames.map(l=>`<option value="${escapeHtml(l)}">${escapeHtml(l)}</option>`).join('');
+  if(cur && loaiNames.includes(cur)) el.value = cur;
+}
+function renderExtraCostList(){
+  const wrap = document.getElementById('extraCostListWrap');
+  const sumWrap = document.getElementById('extraCostSummaryWrap');
+  const totalBox = document.getElementById('extraCostTotalBox');
+  if(!wrap) return;
+  const list = getFilteredExtraCosts();
+  populateExtraCostLoaiFilter(list);
+  const loaiFilter = document.getElementById('ecLoaiFilter')?.value;
+  const total = list.reduce((s,x)=>s+x.amount,0);
+  totalBox.textContent = `Tổng: ${formatNumber(total)} đ`;
+
+  const byLoai = {};
+  list.forEach(x=>{ byLoai[x.loai] = (byLoai[x.loai]||0) + x.amount; });
+  const loaiNames = Object.keys(byLoai).sort((a,b)=>byLoai[b]-byLoai[a]);
+  sumWrap.innerHTML = loaiNames.length ? `
+    <table class="grid">
+      <thead><tr><th>Loại phí</th><th style="width:150px;">Tổng tiền</th></tr></thead>
+      <tbody>${loaiNames.map(l=>`<tr style="${l===loaiFilter?'background:#FFF6C9;':''}cursor:pointer;" onclick="document.getElementById('ecLoaiFilter').value='${escapeHtml(l)}';renderExtraCostList();"><td style="text-align:left;padding:6px 8px;font-weight:700;">${escapeHtml(l)}</td><td class="readonly">${formatNumber(byLoai[l])}</td></tr>`).join('')}</tbody>
+    </table>` : '';
+
+  const detailList = loaiFilter ? list.filter(x=>x.loai===loaiFilter) : list;
+  if(detailList.length===0){ wrap.innerHTML = `<div class="empty-state">Không có khoản phí nào trong khoảng đã chọn</div>`; return; }
+  const body = detailList.map(x=>`
+    <tr>
+      <td class="readonly">${formatDateVN(x.date)}</td>
+      <td style="text-align:left;padding:6px 8px;font-weight:700;">${escapeHtml(x.loai)}</td>
+      <td style="text-align:left;padding:6px 8px;">${escapeHtml(x.khachHang)}</td>
+      <td class="readonly">${formatNumber(x.amount)}</td>
+    </tr>`).join('');
+  wrap.innerHTML = `
+    <table class="grid">
+      <thead><tr><th style="width:100px;">Ngày</th><th>Loại phí</th><th>Thuộc phiếu (KH)</th><th style="width:130px;">Số tiền</th></tr></thead>
+      <tbody>${body}</tbody>
+    </table>`;
+}
+function exportExtraCostExcel(){
+  const loaiFilter = document.getElementById('ecLoaiFilter')?.value;
+  let list = getFilteredExtraCosts();
+  if(loaiFilter) list = list.filter(x=>x.loai===loaiFilter);
+  if(list.length===0){ alert("Không có dữ liệu để xuất"); return; }
+  const total = list.reduce((s,x)=>s+x.amount,0);
+  const aoa = [ ["CHI PHÍ KHÁC (PHÍ TRONG PHIẾU)"], [], ["STT","NGÀY","LOẠI PHÍ","THUỘC PHIẾU (KH)","SỐ TIỀN"] ];
+  list.forEach((x,i)=> aoa.push([i+1, formatDateVN(x.date), x.loai, x.khachHang, x.amount]));
+  aoa.push(["", "", "", "TỔNG", total]);
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  ws['!cols'] = [{wch:6},{wch:12},{wch:22},{wch:22},{wch:16}];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Chi phi khac");
+  XLSX.writeFile(wb, `chi-phi-khac-${todayKey()}.xlsx`);
+}
+
 function exportDdlSummaryExcel(){
   if(dealers.length===0){ alert("Chưa có đại lý nào"); return; }
   const rows = dealers.map(d=>{
@@ -3312,6 +4029,9 @@ document.getElementById('sheetDate').value = yesterdayKey();
 newSheet();
 updateAllSuggestions();
 initDdlEntryRows();
+initNccEntryRows();
+initNccPaymentRows();
+applyExtraTabsVisibility();
 document.getElementById('ddlPayDate').value = todayKey();
 setTimeout(hideLoadingOverlay, 8000);
 switchTab('debtdl');
