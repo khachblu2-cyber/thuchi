@@ -97,7 +97,7 @@
         style="background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.42);color:#fff;border-radius:9px;padding:7px 12px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;font-family:inherit;">🚪 <span id="headerUserName"></span> · Thoát</button>
     </div>
     <div class="save-status" id="cloudStatus" style="color:#93A5C4;"></div>
-    <div class="save-status" style="color:#7C93B8;opacity:.75;">Phiên bản: V4.7.2</div>
+    <div class="save-status" style="color:#7C93B8;opacity:.75;">Phiên bản: V4.7.3</div>
   </div>
 </div>
 
@@ -709,8 +709,12 @@
       </div>
       <div id="spSumBanner"></div>
     </div>
+    <div class="section-tab" style="margin:14px 0 0;">
+      <button class="active" id="spSumBtnCat" onclick="setSpendSumMode('cat')">📁 Tổng hợp theo mục</button>
+      <button id="spSumBtnDetail" onclick="setSpendSumMode('detail')">📄 Tổng hợp chi tiết</button>
+    </div>
     <div class="card" style="overflow-x:auto;">
-      <div class="card-title">Tổng tiền từng danh mục</div>
+      <div class="card-title" id="spSumTitle">Tổng tiền từng danh mục</div>
       <div id="spSumWrap"></div>
     </div>
     <div class="row-flex" style="margin:14px 0 30px;">
@@ -4678,6 +4682,23 @@ function setSpendPeriod(mode){
   document.getElementById('spBoxYear').classList.toggle('hidden', mode!=='year');
   renderSpendSummary();
 }
+let spendSumMode = 'cat';
+function setSpendSumMode(mode){
+  spendSumMode = mode;
+  document.getElementById('spSumBtnCat').classList.toggle('active', mode==='cat');
+  document.getElementById('spSumBtnDetail').classList.toggle('active', mode==='detail');
+  document.getElementById('spSumTitle').textContent = mode==='cat' ? 'Tổng tiền từng danh mục' : 'Chi tiết từng khoản chi';
+  renderSpendSummary();
+}
+// Danh sach chi tiet tung khoan chi trong ky, sap theo ngay tang dan
+function getSpendDetailRows(){
+  const info = getSpendPeriodInfo();
+  const catFilter = document.getElementById('spSumCat')?.value || '';
+  const list = spendItems.filter(x=> info.match(x) && (!catFilter || x.purpose===catFilter))
+    .sort((a,b)=> a.date===b.date ? (a.createdAt||0)-(b.createdAt||0) : String(a.date).localeCompare(String(b.date)));
+  const total = list.reduce((s,x)=>s+x.amount,0);
+  return { list, total, label: info.label, count: list.length };
+}
 function populateSpendPeriodSelects(){
   const mSel = document.getElementById('spPeriodMonth');
   const myISel = document.getElementById('spPeriodMonthYear');
@@ -4754,6 +4775,23 @@ function renderSpendSummary(){
     wrap.innerHTML = '<div class="empty-state">Không có khoản chi nào trong kỳ đã chọn</div>';
     return;
   }
+  if(spendSumMode === 'detail'){
+    const d = getSpendDetailRows();
+    const dbody = d.list.map((x,i)=>`<tr>
+      <td>${i+1}</td>
+      <td>${formatDateVN(x.date)}</td>
+      <td class="l">${escapeHtml(x.purpose)}</td>
+      <td class="r">${formatNumber(x.amount)}</td>
+      <td class="l">${escapeHtml(x.note||'')}</td>
+    </tr>`).join('');
+    wrap.innerHTML = `<table class="sp" style="min-width:660px;">
+      <thead><tr><th style="width:52px;">STT</th><th style="width:104px;">Ngày</th><th>Danh mục</th><th style="width:150px;">Số tiền</th><th style="width:170px;">Ghi chú</th></tr></thead>
+      <tbody>${dbody}
+        <tr class="tot"><td colspan="3" class="l" style="font-size:15px;">TỔNG CỘNG</td>
+        <td class="r" style="font-size:20px;color:#B32D1F;white-space:nowrap;">${formatNumber(d.total)}</td><td></td></tr>
+      </tbody></table>`;
+    return;
+  }
   const body = rows.map((r,i)=>`<tr>
     <td>${i+1}</td>
     <td class="l">${escapeHtml(r.name)}</td>
@@ -4768,7 +4806,42 @@ function renderSpendSummary(){
       <td class="r" style="font-size:20px;color:#B32D1F;white-space:nowrap;">${formatNumber(total)}</td><td>100%</td></tr>
     </tbody></table>`;
 }
+function buildSpendSummaryDetailHtml(){
+  const { list, total, label, count } = getSpendDetailRows();
+  const body = list.map((x,i)=>`<tr>
+    <td style="padding:8px;border:1px solid #9DB4CE;">${i+1}</td>
+    <td style="padding:8px;border:1px solid #9DB4CE;">${formatDateVN(x.date)}</td>
+    <td style="padding:8px;border:1px solid #9DB4CE;text-align:left;">${escapeHtml(x.purpose)}</td>
+    <td style="padding:8px;border:1px solid #9DB4CE;text-align:right;">${formatNumber(x.amount)}</td>
+    <td style="padding:8px;border:1px solid #9DB4CE;text-align:left;">${escapeHtml(x.note||'')}</td>
+  </tr>`).join('');
+  return `
+    <div style="font-family:Inter,system-ui,sans-serif;color:#16324F;font-size:15px;">
+      <h2 style="text-align:center;margin:0 0 4px;font-size:26px;">TỔNG HỢP CHI TIỀN</h2>
+      <div style="text-align:center;font-size:15px;color:#5A7391;margin-bottom:16px;">${escapeHtml(label)} · ${count} khoản chi</div>
+      <table style="width:100%;border-collapse:collapse;font-size:15px;">
+        <thead><tr>
+          <th style="padding:9px 8px;border:1px solid #9DB4CE;background:#1D5FAE;color:#fff;width:52px;">STT</th>
+          <th style="padding:9px 8px;border:1px solid #9DB4CE;background:#1D5FAE;color:#fff;width:120px;">Ngày</th>
+          <th style="padding:9px 8px;border:1px solid #9DB4CE;background:#1D5FAE;color:#fff;">Danh mục</th>
+          <th style="padding:9px 8px;border:1px solid #9DB4CE;background:#1D5FAE;color:#fff;width:160px;">Số tiền</th>
+          <th style="padding:9px 8px;border:1px solid #9DB4CE;background:#1D5FAE;color:#fff;width:190px;">Ghi chú</th>
+        </tr></thead>
+        <tbody>${body}
+          <tr style="font-weight:700;background:#FFF6C9;">
+            <td colspan="3" style="padding:13px 8px;border:1px solid #9DB4CE;text-align:left;font-size:18px;">TỔNG CỘNG</td>
+            <td style="padding:13px 8px;border:1px solid #9DB4CE;text-align:right;font-size:27px;color:#B32D1F;line-height:1.1;white-space:nowrap;">${formatNumber(total)}</td>
+            <td style="border:1px solid #9DB4CE;"></td>
+          </tr>
+        </tbody>
+      </table>
+      <div style="text-align:center;font-size:12px;color:#8FA0B5;margin-top:16px;border-top:1px dashed #C9D8EA;padding-top:9px;">
+        Sổ Thu Chi Tổng — 4 Công Ty · ${new Date().toLocaleString('vi-VN')}
+      </div>
+    </div>`;
+}
 function buildSpendSummaryHtml(){
+  if(spendSumMode === 'detail') return buildSpendSummaryDetailHtml();
   const { rows, total, label, count } = getSpendSummaryRows();
   const body = rows.map((r,i)=>`<tr>
     <td style="padding:7px;border:1px solid #9DB4CE;">${i+1}</td>
@@ -4805,7 +4878,8 @@ function buildSpendSummaryHtml(){
 function shareSpendSummaryImage(){
   const { rows } = getSpendSummaryRows();
   if(rows.length===0){ alert('Không có dữ liệu trong kỳ đã chọn'); return; }
-  shareHtmlAsImage(buildSpendSummaryHtml(), `tong-hop-chi-tien-${todayKey()}.png`, 'Tổng hợp chi tiền');
+  const ten = spendSumMode==='detail' ? 'chi-tiet' : 'theo-muc';
+  shareHtmlAsImage(buildSpendSummaryHtml(), `tong-hop-chi-tien-${ten}-${todayKey()}.png`, 'Tổng hợp chi tiền');
 }
 function exportSpendExcel(){
   if(spendItems.length===0){ alert('Chưa có khoản chi nào để xuất'); return; }
@@ -4824,6 +4898,19 @@ function exportSpendExcel(){
   XLSX.writeFile(wb, `chi-tien-${todayKey()}.xlsx`);
 }
 function exportSpendSummaryExcel(){
+  if(spendSumMode === 'detail'){
+    const d = getSpendDetailRows();
+    if(d.list.length===0){ alert('Không có dữ liệu trong kỳ đã chọn'); return; }
+    const aoa = [['TỔNG HỢP CHI TIỀN (CHI TIẾT) — ' + d.label], [], ['STT','Ngày','Danh mục','Số tiền','Ghi chú']];
+    d.list.forEach((x,i)=> aoa.push([i+1, formatDateVN(x.date), x.purpose, x.amount, x.note||'']));
+    aoa.push(['','','TỔNG CỘNG', d.total, '']);
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+    ws['!cols'] = [{wch:6},{wch:13},{wch:32},{wch:18},{wch:28}];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Chi tiet chi");
+    XLSX.writeFile(wb, `tong-hop-chi-tien-chi-tiet-${todayKey()}.xlsx`);
+    return;
+  }
   const { rows, total, label } = getSpendSummaryRows();
   if(rows.length===0){ alert('Không có dữ liệu trong kỳ đã chọn'); return; }
   const aoa = [['TỔNG HỢP CHI TIỀN — ' + label], [], ['STT','Danh mục','Số khoản','Số tiền','Tỷ lệ']];
@@ -4833,7 +4920,7 @@ function exportSpendSummaryExcel(){
   ws['!cols'] = [{wch:6},{wch:34},{wch:12},{wch:18},{wch:10}];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Tong hop chi");
-  XLSX.writeFile(wb, `tong-hop-chi-tien-${todayKey()}.xlsx`);
+  XLSX.writeFile(wb, `tong-hop-chi-tien-theo-muc-${todayKey()}.xlsx`);
 }
 
 
