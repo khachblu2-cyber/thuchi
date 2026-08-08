@@ -97,7 +97,7 @@
         style="background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.42);color:#fff;border-radius:9px;padding:7px 12px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;font-family:inherit;">🚪 <span id="headerUserName"></span> · Thoát</button>
     </div>
     <div class="save-status" id="cloudStatus" style="color:#93A5C4;"></div>
-    <div class="save-status" style="color:#7C93B8;opacity:.75;">Phiên bản: V4.7.1</div>
+    <div class="save-status" style="color:#7C93B8;opacity:.75;">Phiên bản: V4.7.2</div>
   </div>
 </div>
 
@@ -1432,6 +1432,12 @@ function applyExtraTabsVisibility(){
   if(box) box.checked = showExtraTabs;
 }
 function switchTab(tab){
+  // Chan mo tab khong co quyen xem (vd: dang nhap xong tu nhay ve tab dau tien duoc phep)
+  const permNode = TAB_PERM_NODE[tab];
+  if(permNode && !can(permNode,'v')){
+    const alt = firstVisibleTab();
+    if(alt && alt !== tab){ switchTab(alt); return; }
+  }
   document.getElementById('sheetTab').classList.toggle('hidden', tab!=='sheet');
   document.getElementById('historyTab').classList.toggle('hidden', tab!=='history');
   document.getElementById('customersTab').classList.toggle('hidden', tab!=='customers');
@@ -2712,6 +2718,7 @@ function emptyDdlEntryRow(){ return { id: uid(), date: yesterdayKey(), dealer:''
 function initDdlEntryRows(){ ddlEntryRows = Array.from({length:10}, emptyDdlEntryRow); }
 
 function setDdlSection(s){
+  s = firstAllowedSection(DDL_SECTIONS, s) || s;
   document.getElementById('ddlEntrySection').classList.toggle('hidden', s!=='entry');
   document.getElementById('ddlListSection').classList.toggle('hidden', s!=='list');
   document.getElementById('ddlPaySection').classList.toggle('hidden', s!=='pay');
@@ -4296,6 +4303,7 @@ let spendPeriodMode = 'month';
 let editingSpendId = null;
 
 function setSpendSection(sec){
+  sec = firstAllowedSection(SPEND_SECTIONS, sec) || sec;
   spendSection = sec;
   document.getElementById('spNewSection').classList.toggle('hidden', sec!=='new');
   document.getElementById('spCatSection').classList.toggle('hidden', sec!=='cat');
@@ -4943,10 +4951,28 @@ function applyPermissions(){
   if(hn && currentUser) hn.textContent = currentUser.fullname || currentUser.username;
   updateStickyOffsets();
 }
+const TAB_PERM_NODE = {
+  sheet:'create_sheet', history:'create_history', customers:'create_cust',
+  debtkh:'debtkh', debtdl:'debtdl', spend:'spend', candoi:'candoi',
+  ncc:'ncc', extracost:'extracost', users:'users', settings:'settings',
+};
+const DDL_SECTIONS   = [['entry','ddl_entry'],['list','ddl_list'],['pay','ddl_pay'],['payout','ddl_payout'],['summary','ddl_summary'],['ledger','ddl_ledger']];
+const SPEND_SECTIONS = [['new','spend_new'],['cat','spend_cat'],['sum','spend_sum']];
+// Tra ve muc con dang duoc phep xem: uu tien muc muon mo, khong duoc thi lay muc dau tien co quyen
+function firstAllowedSection(list, want){
+  if(want && list.some(([sec,node])=> sec===want && can(node,'v'))) return want;
+  const f = list.find(([sec,node])=> can(node,'v'));
+  return f ? f[0] : null;
+}
 function firstVisibleTab(){
-  const order = [['create','sheet'],['debtkh','debtkh'],['debtdl','debtdl'],['spend','spend'],['candoi','candoi'],['ncc','ncc'],['extracost','extracost'],['users','users'],['settings','settings']];
+  if(can('create','v')){
+    if(can('create_sheet','v'))   return 'sheet';
+    if(can('create_history','v')) return 'history';
+    if(can('create_cust','v'))    return 'customers';
+  }
+  const order = [['debtkh','debtkh'],['debtdl','debtdl'],['spend','spend'],['candoi','candoi'],['ncc','ncc'],['extracost','extracost'],['users','users'],['settings','settings']];
   for(const [node, tab] of order){ if(can(node,'v')) return tab; }
-  return 'sheet';
+  return 'settings';
 }
 
 // ---------- Cong dang nhap ----------
