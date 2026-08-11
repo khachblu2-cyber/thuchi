@@ -97,7 +97,7 @@
         style="background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.42);color:#fff;border-radius:9px;padding:7px 12px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;font-family:inherit;">🚪 <span id="headerUserName"></span> · Thoát</button>
     </div>
     <div class="save-status" id="cloudStatus" style="color:#93A5C4;"></div>
-    <div class="save-status" style="color:#7C93B8;opacity:.75;">Phiên bản: V4.7.3</div>
+    <div class="save-status" style="color:#7C93B8;opacity:.75;">Phiên bản: V4.7.4</div>
   </div>
 </div>
 
@@ -601,6 +601,15 @@
   table.sp th{ background:#1D5FAE; color:#fff; padding:8px 6px; font-size:11.5px; border:1px solid #1D5FAE; font-weight:700; white-space:nowrap; }
   table.sp td{ border:1px solid #C9D8EA; padding:7px 6px; text-align:center; }
   table.sp td.batch{ color:#1D5FAE; font-weight:700; font-size:12px; line-height:1.35; }
+  /* ===== Bang CAN DOI: chu to, cot khach hang gon ===== */
+  table.grid.cd-big{ font-size:17px; }
+  table.grid.cd-big th{ font-size:13px; padding:10px 8px; }
+  table.grid.cd-big td{ padding:10px 8px; }
+  table.grid.cd-big td.num{ font-size:19px; font-weight:700; white-space:nowrap; }
+  table.grid.cd-big td.kh{ font-size:18px; font-weight:600; text-align:left; }
+  table.grid.cd-big td.kh .kh-name{ display:inline-block; max-width:184px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; vertical-align:bottom; }
+  table.grid.cd-big tr.sum-row td{ font-size:19px; }
+  table.grid.cd-big tr.sum-row td.num{ font-size:21px; }
   table.sp tbody tr:nth-child(even) td{ background:#F7FAFD; }
   table.sp td.l{ text-align:left; } table.sp td.r{ text-align:right; }
   table.sp tr.tot td{ background:#FFF6C9; font-weight:700; }
@@ -4032,26 +4041,26 @@ function renderCanDoi(){
   const body = rows.map((r,i)=>`
     <tr>
       <td class="readonly">${i+1}</td>
-      <td style="text-align:left;padding:6px 8px;"><span class="badge">${escapeHtml(r.code)}</span> ${escapeHtml(r.name)}${isGiaCongCustomer(r.name)?` <span style="background:#FFF6C9;color:#8a6d00;border-radius:6px;padding:2px 7px;font-size:10.5px;font-weight:700;">🔧 Gia công</span>`:''}</td>
-      <td class="readonly" style="color:var(--rust);">${formatNumber(r.noDaiLy)}</td>
-      <td class="readonly" style="color:var(--blue-dk);">${formatNumber(r.noCongTy)}</td>
-      <td class="readonly" style="font-weight:700;color:${r.chenhLech<0?'var(--rust)':'var(--moss)'};">${r.chenhLech<0?'':'+'}${formatNumber(r.chenhLech)}</td>
+      <td class="kh"><span class="kh-name" title="${escapeHtml(r.name)}">${escapeHtml(r.name)}</span>${isGiaCongCustomer(r.name)?` <span style="background:#FFF6C9;color:#8a6d00;border-radius:6px;padding:2px 7px;font-size:12px;font-weight:700;">🔧 Gia công</span>`:''}</td>
+      <td class="readonly num" style="color:var(--rust);">${formatNumber(r.noDaiLy)}</td>
+      <td class="readonly num" style="color:var(--blue-dk);">${formatNumber(r.noCongTy)}</td>
+      <td class="readonly num" style="color:${r.chenhLech<0?'var(--rust)':'var(--moss)'};">${r.chenhLech<0?'':'+'}${formatNumber(r.chenhLech)}</td>
     </tr>
   `).join('');
   const ncoRows = showNco ? NCO_CUSTOMER_NAMES.map(name=>`
     <tr style="background:#EAF1FB;">
       <td class="readonly"></td>
-      <td style="text-align:left;padding:6px 8px;font-weight:700;">${escapeHtml(name)} (chưa chi cho đại lý)</td>
-      <td class="readonly" style="color:var(--rust);font-weight:700;">${formatNumber(ncoTotals[name])}</td>
-      <td class="readonly" style="color:var(--muted);">—</td>
-      <td class="readonly" style="color:var(--muted);">—</td>
+      <td class="kh" style="font-weight:700;"><span class="kh-name" title="${escapeHtml(name)}">${escapeHtml(name)}</span> <span style="font-size:12px;color:var(--muted);font-weight:600;">(chưa chi cho ĐL)</span></td>
+      <td class="readonly num" style="color:var(--rust);">${formatNumber(ncoTotals[name])}</td>
+      <td class="readonly num" style="color:var(--muted);">—</td>
+      <td class="readonly num" style="color:var(--muted);">—</td>
     </tr>
   `).join('') : '';
   wrap.innerHTML = `
-    <table class="grid">
-      <thead><tr><th style="width:36px;">STT</th><th>KHÁCH HÀNG</th><th style="width:150px;">NỢ ĐẠI LÝ</th><th style="width:150px;">NỢ CÔNG TY</th><th style="width:150px;">CHÊNH LỆCH</th></tr></thead>
+    <table class="grid cd-big" style="min-width:760px;">
+      <thead><tr><th style="width:52px;">STT</th><th style="width:200px;">KHÁCH HÀNG</th><th>NỢ ĐẠI LÝ</th><th>NỢ CÔNG TY</th><th>CHÊNH LỆCH</th></tr></thead>
       <tbody>${body}${ncoRows}
-        <tr class="sum-row"><td colspan="2">TỔNG</td><td style="color:var(--rust);">${formatNumber(grandNoDaiLy)}</td><td style="color:var(--blue-dk);">${formatNumber(grandNoCongTy)}</td><td style="color:${grandChenh<0?'var(--rust)':'var(--moss)'};">${grandChenh<0?'':'+'}${formatNumber(grandChenh)}</td></tr>
+        <tr class="sum-row"><td colspan="2">TỔNG</td><td class="num" style="color:var(--rust);">${formatNumber(grandNoDaiLy)}</td><td class="num" style="color:var(--blue-dk);">${formatNumber(grandNoCongTy)}</td><td class="num" style="color:${grandChenh<0?'var(--rust)':'var(--moss)'};">${grandChenh<0?'':'+'}${formatNumber(grandChenh)}</td></tr>
       </tbody>
     </table>
     ${showNco ? `<div class="muted" style="font-size:11px;margin-top:6px;">🧊 Nguyên con/Oxy (chi phí vật tư, không có khách hàng đối ứng) đã được cộng vào cột Nợ Đại lý và Tổng Chênh lệch phía trên.</div>` : ''}
